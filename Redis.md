@@ -1,6 +1,6 @@
 # 持久化
 
-参考链接：[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#redis-%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6)、[博客园](https://www.cnblogs.com/ysocean/p/9114268.html)、[博客园](https://www.cnblogs.com/ysocean/p/9114267.html)、[华为云](https://bbs.huaweicloud.com/blogs/detail/302470)
+参考链接：[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#redis-%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6)、[博客园](https://www.cnblogs.com/ysocean/p/9114268.html)、[博客园](https://www.cnblogs.com/ysocean/p/9114267.html)、[华为云](https://bbs.huaweicloud.com/blogs/detail/302470)、[Redis文档](https://redis.io/docs/manual/persistence/)
 
 ## 怎么保证 Redis 挂掉之后再重启数据可以进行恢复？
 
@@ -68,9 +68,9 @@ Redis使用Linux系统的`fork()`生成一个子进程来将数据保存到磁�
 
 #### 自动生成
 
-Redis还提供了自动生成`.rdb`文件的方式。可以通过配置文件进行设置，让Redis在**“N 秒内数据集至少有 M 个改动”**这一条件满足，自动进行数据集保存操作。
+Redis还提供了自动生成`.rdb`文件的方式。可以通过配置文件进行设置，让Redis在**“每N秒内至少有M个键改动”**这一条件满足时，自动进行数据集保存操作。
 
-比如说， 以下设置会让Redis在满足“60秒内有至少有1000个键改动”这一条件满足时， 自动进行数据集保存操作：
+比如说，以下设置会让Redis在满足“每60秒内有至少有1000个键改动”这一条件满足时，自动进行数据集保存操作：
 
 ```
 save 60 1000
@@ -81,28 +81,6 @@ save 60 1000
 其他相关配置：
 
 ```
-
-```
-
-
-
-RDB 有两种触发方式，分别是自动触发和手动触发。
-
-#### 自动触发
-
-`redis.conf`配置文件中默认配置为：
-
-```
-save 900 1
-save 300 10
-save 60 10000
-```
-
-`save m n ` 表示m秒内数据集存在n次修改时，自动触发`bgsave`（看下文）。
-
-除了默认配置外，还可添加其他配置信息：
-
-```
 dbfilename dump-<port>.rdb
 dir /var/lib/redis
 stop-writes-on-bgsave-error yes
@@ -110,13 +88,11 @@ rdbcompression yes
 rdbchecksum yes
 ```
 
-- `dbfilename`：设置快照的文件名，默认是 `dump.rdb`。
+- `dbfilename`：设置快照的文件名，默认是`dump.rdb`。
 - `dir`：设置快照文件的存放路径。默认是和当前配置文件保存在同一目录。
 - `stop-writes-on-bgsave-error`：默认值为`yes`。当启用了RDB且最后一次后台保存数据失败，Redis是否停止接收数据。
 - `rdbcompression`：默认值是`yes`。对于存储到磁盘中的快照，可以设置是否进行压缩存储。如果是的话Redis会采用**LZF**算法进行压缩。
 - `rdbchecksum`：默认值是`yes`。在存储快照后，我们还可以让Redis使用**CRC64**算法来进行数据校验。
-
-在配置文件中配置`save`，当实际操作满足该配置形式时就会进行RDB持久化，将当前的内存快照保存在`dir`配置的目录中，文件名由配置的`dbfilename`决定。
 
 如果**只使用Redis的缓存功能，不需要持久化**，那么可以注释掉所有的`save`行或直接添加一个空字符串来实现停用：
 
@@ -124,11 +100,76 @@ rdbchecksum yes
 save ""
 ```
 
-注意：
+#### 注意
 
-#### 手动触发
+执行`flushall`或退出Redis都会产生`.rdb`文件（前者产生的文件为空）。
 
+### 恢复数据
 
+将`.rdb`文件移动到**Redis安装目录**并启动服务即可，Redis会自动加载文件数据至内存。Redis 服务器在**载入`.rdb`文件期间会一直处于阻塞状态**，直到载入工作完成为止。
+
+### 优缺点
+
+#### 优点
+
+- RDB是Redis数据库中一个**非常紧凑的单时间点文件**，它非常适用于备份，可以在发生数据灾难时轻松恢复不同版本的数据集。
+- RDB非常适合**灾难恢复**，它是一个可以**传输到远程数据中心**的压缩文件。
+- RDB最大限度地**提高了Redis的性能**，因为Redis父进程为了持久化而需要做的唯一工作就是**派生一个完成所有其余工作的子进程**。父进程永远**不会执行磁盘I/O或类似操作**。
+- RDB恢复**大数据集时更快**（相比于AOF）。
+- RDB在副本（Replicas）上支持**重启和故障转移后的部分重新同步**。
+
+#### 缺点
+
+- **不可控、丢失数据风险**：RDB**没有将数据丢失的可能性降到最低**。虽然可以配置多个时间保存点，但如果Redis由于没有正确关闭而直接停止工作，那么还是有可能丢失最新的数据。
+- **耗时、耗性能**：RDB需要经常`fork()`以便使用子进程在磁盘上持久化。如果数据集很大，`fork()`可能会很耗时，并且性能较低的CPU可能还会导致Redis客户端停止几毫秒甚至一秒钟。AOF也需要`fork()`但频率较低，而且可以调整重写日志的频率。
 
 ## AOF
+
+### 简介
+
+从`v1.1`版本开始，Redis增加了一种完全耐久（durable）的持久化方式：AOF持久化。可以在配置文件中打开AOF方式：
+
+```shell
+appendonly yes
+```
+
+打开AOF后，每当Redis执行一个**改变数据集的命令**时（比如 `SET`），**这个命令就会被追加到AOF文件的末尾**。这样的话，当Redis重新启动时，程序就可以通过**重新执行AOF文件中的命令来达到重建数据集**的目的。
+
+创建文件和恢复数据：
+
+![AOF创建](Redis.assets/aof-establish.png)
+
+![AOF恢复](Redis.assets/aof-recovery.png)
+
+### 三种策略
+
+可以通过配置参数`appendfsync`来设置Redis多久将数据`fsync()`到磁盘一次。（`fsync()`：Linux系统函数，只针对单个文件，可用于数据库这样的应用程序，这种应用程序需要确保将修改过的块立即写到磁盘上）
+
+#### `always`
+
+**每次有新命令追加到AOF文件时就执行一次**`fsync()` ，非常慢但也非常安全。
+
+![always策略](Redis.assets/aof-always.png)
+
+#### `everysec`
+
+**每秒一次**`fsync()`：足够快（和RDB持久化差不多），在故障时只会丢失1秒钟的数据。**推荐（且默认）**的策略，可以同时兼顾速度和安全性。
+
+![everysec策略](Redis.assets/aof-everysec.png)
+
+#### `no`
+
+从不`fsync` ：将数据**交给操作系统**来处理，由操作系统来决定什么时候同步数据，更快但更不安全。
+
+![no策略](Redis.assets/aof-no.png)
+
+#### 三种策略比较
+
+|    策略    |       优点        |   缺点   |
+| :--------: | :---------------: | :------: |
+|  `always`  |    不丢失数据     | IO开销大 |
+| `everysec` | 最多丢失1秒钟数据 |  同优点  |
+|    `no`    |  由操作系统代管   |  不可控  |
+
+### 重写
 
