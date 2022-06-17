@@ -19,7 +19,7 @@
 - **Redis支持发布/订阅模型、Lua 脚本、事务等功能，而 Memcached 不支持。并且，Redis支持更多的编程语言。**
 - Memcached过期数据的**删除策略只用了惰性删除**，而Redis**同时使用了惰性删除与定期删除**。
 
-# 持久化
+# 持久化★
 
 参考链接：[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#redis-%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6)、[博客园](https://www.cnblogs.com/ysocean/p/9114268.html)、[博客园](https://www.cnblogs.com/ysocean/p/9114267.html)、[CSDN](https://lansonli.blog.csdn.net/article/details/102648597)、[掘金](https://juejin.cn/post/6844904089722028045)、[Redis文档](https://redis.io/docs/manual/persistence/)
 
@@ -714,9 +714,44 @@ Redlock只有建立在**时钟正确**的前提下才能正常工作，如果可
 1. 使用分布式锁，在上层完成**互斥**目的，虽然极端情况下锁会失效，但它可以最大程度把并发请求阻挡在最上层，减轻操作资源层的压力。
 2. 但对于要求数据绝对正确的业务，在资源层一定要做好**兜底**，设计思路可以借鉴fencing token的方案。
 
-# 常见数据类型及底层数据结构
+# 常见数据类型及底层数据结构★
 
-参考链接：[]()
+参考链接：[Redis文档](https://redis.io/docs/manual/data-types/)、[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-types.html)、[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#redis-%E5%B8%B8%E8%A7%81%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84)
 
-按照师兄笔记结构，参考笔记中的链接和JavaGuide
+按照师兄笔记结构，参考笔记中的链接和JavaGuide，逐条补充，命令需详细
 
+## 基础数据类型
+
+Redis中所有的**key（键）都是字符串**，所以数据类型是指**存储值的数据类型**，主要包括常见的5种基础数据类型，分别是：String、List、Set、Zset、Hash。
+
+![5种基础数据类型](Redis.assets/datatype-basic.jpeg)
+
+| 类型          | 存储的值                                       | 读写能力                                                     |
+| ------------- | ---------------------------------------------- | ------------------------------------------------------------ |
+| String 字符串 | 字符串、整数或浮点数                           | 对整个字符串或字符串的一部分进行操作；对整数或浮点数进行自增或自减操作 |
+| List 列表     | 一个链表，链表上的**每个结点都包含一个字符串** | 对链表的两端进行`push`和`pop`操作，读取单个或多个元素；根据值查找或删除元素 |
+| Set 集合      | 包含**字符串的无序集合**                       | 字符串的集合，包含基础的方法有添加、获取、删除；还包含计算交集、并集、差集等 |
+| Hash 散列     | 包含**键值对的无序散列表**                     | 包含方法有添加、获取、删除单个元素                           |
+| Zset 有序集合 | 和散列一样，**用于存储键值对**                 | 字符串成员与浮点数分数之间的有序映射；**元素的排列顺序由分数的大小决定**；包含方法有添加、获取、删除单个元素以及根据分值范围或成员来获取元素 |
+
+### String字符串
+
+> String是Redis中最基本的数据类型
+
+String类型是二进制安全的，意思是Redis的String可以包含任何数据，如数字、字符串、jpg图片或者序列化的对象。
+
+#### 图例
+
+#### 命令
+
+
+
+
+
+## 特殊数据类型
+
+# 过期删除策略和缓存淘汰策略★
+
+如果不需要看 缓存雪崩、击穿等问题的话
+
+可参考 javaguide 和 java全站知识体系中的问题汇总
