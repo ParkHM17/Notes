@@ -19,7 +19,7 @@
 - **Redis支持发布/订阅模型、Lua 脚本、事务等功能，而 Memcached 不支持。并且，Redis支持更多的编程语言。**
 - Memcached过期数据的**删除策略只用了惰性删除**，而Redis**同时使用了惰性删除与定期删除**。
 
-# 持久化★
+# 持久化:rocket:
 
 参考链接：[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#redis-%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6)、[博客园](https://www.cnblogs.com/ysocean/p/9114268.html)、[博客园](https://www.cnblogs.com/ysocean/p/9114267.html)、[CSDN](https://lansonli.blog.csdn.net/article/details/102648597)、[掘金](https://juejin.cn/post/6844904089722028045)、[Redis文档](https://redis.io/docs/manual/persistence/)
 
@@ -714,7 +714,7 @@ Redlock只有建立在**时钟正确**的前提下才能正常工作，如果可
 1. 使用分布式锁，在上层完成**互斥**目的，虽然极端情况下锁会失效，但它可以最大程度把并发请求阻挡在最上层，减轻操作资源层的压力。
 2. 但对于要求数据绝对正确的业务，在资源层一定要做好**兜底**，设计思路可以借鉴fencing token的方案。
 
-# 数据结构★
+# 数据结构:rocket:
 
 参考链接：[Redis文档](https://redis.io/docs/manual/data-types/)、[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-types.html)、[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#redis-%E5%B8%B8%E8%A7%81%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84)、[博客园](https://www.cnblogs.com/ysocean/p/9080940.html)、[博客园](https://www.cnblogs.com/xrq730/p/8944539.html)
 
@@ -733,7 +733,97 @@ Redlock只有建立在**时钟正确**的前提下才能正常工作，如果可
 
 ### 为什么需要redisObject？
 
+在Redis的命令中，用于对键进行处理的命令占了很大一部分，而对于键所保存的**值类型的命令又各不相同**。如：`LPUSH`和`LLEN`只能用于列表键，而`SADD`和`SRANDMEMBER`只能用于集合键；另外一些命令，比如`DEL`、`TTL`和`TYPE`可以用于任何类型的键。
+
+要正确实现这些命令，必须为不同类型的键设置不同的处理方式，例如：删除一个列表键和删除一个字符串键的操作过程就不太一样。
+
+以上的描述说明，**Redis必须让每个键都带有类型信息，使得程序可以检查键的类型，并为它选择合适的处理方式**。
+
+进一步地，例如集合类型就可以由字典和整数集合两种不同的数据结构实现。但是当用户执行`ZADD`命令时，用户不必关心集合使用的是什么编码，只要Redis能按照`ZADD`命令的指示将新元素添加到集合就可以了。
+
+这又说明：**操作数据类型的命令除了要对键的类型进行检查之外，还需要根据数据类型的不同编码进行多态处理**。
+
+为了解决以上问题，**Redis构建了自己的类型系统**，这个系统的主要功能包括：
+
+1. redisObject对象
+2. 基于redisObject对象的类型检查
+3. 基于redisObject对象的显式多态函数
+4. 对redisObject进行分配、共享和销毁的机制
+
 ### redisObject数据结构
+
+redisObject是Redis类型系统的核心，数据库中的**每个键、值以及Redis本身处理的参数**都表示为这种数据类型。
+
+```c
+/*
+ * Redis 对象
+ */
+typedef struct redisObject {
+    // 类型
+    unsigned type:4;
+    // 编码方式
+    unsigned encoding:4;
+    // LRU - 24位, 记录最末一次访问时间（相对于lru_clock）; 或者 LFU（最少使用的数据：8位频率，16位访问时间）
+    unsigned lru:LRU_BITS; // LRU_BITS: 24
+    // 引用计数
+    int refcount;
+    // 指向底层数据结构实例
+    void *ptr;
+} robj;
+```
+
+下图对应上面的结构：
+
+![redisObiect](Redis.assets/redisObject.png)
+
+**其中`type`、`encoding`和`ptr`是最重要的三个属性**：
+
+- `type`记录了对象所保存的值的类型，它的值可能是以下常量中的一个：
+
+  ```c
+  /*
+  * 对象类型
+  */
+  #define OBJ_STRING 0 // 字符串
+  #define OBJ_LIST 1 // 列表
+  #define OBJ_SET 2 // 集合
+  #define OBJ_ZSET 3 // 有序集
+  #define OBJ_HASH 4 // 哈希表
+  ```
+
+- encoding记录了对象所保存的值的编码，他的值可能是以下常量中的一个：
+
+  ```c
+  /*
+  * 对象编码
+  */
+  #define OBJ_ENCODING_RAW 0     /* Raw representation */
+  #define OBJ_ENCODING_INT 1     /* Encoded as integer */
+  #define OBJ_ENCODING_HT 2      /* Encoded as hash table */
+  #define OBJ_ENCODING_ZIPMAP 3  /* 注意：版本2.6后不再使用. */
+  #define OBJ_ENCODING_LINKEDLIST 4 /* 注意：不再使用了，旧版本2.x中String的底层之一. */
+  #define OBJ_ENCODING_ZIPLIST 5 /* Encoded as ziplist */
+  #define OBJ_ENCODING_INTSET 6  /* Encoded as intset */
+  #define OBJ_ENCODING_SKIPLIST 7  /* Encoded as skiplist */
+  #define OBJ_ENCODING_EMBSTR 8  /* Embedded sds string encoding */
+  #define OBJ_ENCODING_QUICKLIST 9 /* Encoded as linked list of ziplists */
+  #define OBJ_ENCODING_STREAM 10 /* Encoded as a radix tree of listpacks */
+  ```
+
+- `ptr`是一个指针，指向实际保存值的数据结构，这个数据结构由`type`和`encoding`属性决定。例如：如果一个redisObject的`type`属性为`OBJ_LIST`，`encoding`属性为`OBJ_ENCODING_QUICKLIST`，那么这个对象就是一个**列表（List)**，它的值保存在一个`QuickList`的数据结构内，而`ptr`指针就指向`QuickList`。
+
+### 命令的类型检查和多态处理
+
+**当执行一个处理数据类型命令的时候，Redis执行以下步骤**：
+
+1. 根据给定的Key，在数据库字典中查找与之相对应的redisObject，如果没找到就返回`NULL`；
+2. 检查redisObject的`type`属性和执行命令所需的类型是否相符，如果不相符返回类型错误；
+3. 根据redisObject的`encoding`属性指定的编码，选择合适的操作函数来处理底层的数据结构；
+4. 返回数据结构的操作结果作为命令的返回值。
+
+例如执行`LPOP`命令，流程图如下：
+
+![LPOP命令流程图](Redis.assets/LPOP.png)
 
 
 
@@ -793,9 +883,7 @@ String类型是二进制安全的，意思是Redis的String可以包含任何数
 
 #### 使用场景
 
-1. 计数
-
-   由于Redis单线程的特点，不需要考虑并发造成计数不准的问题，通过`INCRBY`命令可以得到正确的结果。
+1. 缓存：经典使用场景，把常用信息（字符串，图片或者视频等）放到Redis中，Redis作为缓存层，MySQL作为持久化层，可降低MySQL的读写压力。
 
 2. 限制次数
 
