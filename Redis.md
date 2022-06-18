@@ -1183,7 +1183,7 @@ OK
    (integer) 3
    ```
 
-#### geospatial
+#### Geospatial
 
 > Redis的Geo在Redis `v3.2`版本就推出了。这个功能可以推算地理位置的信息：两地之间的距离、方圆几里的人等
 
@@ -1248,6 +1248,494 @@ SDS的总体概览如下图：
 
 > **为什么不使用C语言字符串实现，而是使用SDS**？这样实现有什么好处？
 
+- 常数复杂度获取字符串长度
+
+  由于`len`属性的存在，获取SDS字符串的长度只需要读取`len`属性，时间复杂度为O(1)。而对于C语言，获取字符串的长度通常是经过遍历计数来实现的，时间复杂度为O(n)。通过`strlen key`命令可以获取Key的字符串长度。
+
+- 杜绝缓冲区溢出
+
+  在C语言中使用`strcat` 函数进行两个字符串的拼接时，一旦没有分配足够长度的内存空间，就会造成缓冲区溢出。而对于SDS数据类型，在进行字符修改的时候，**会首先根据记录的len属性检查内存空间是否满足需求**，如果不满足，会进行相应的空间扩展，然后再进行修改操作，所以不会出现缓冲区溢出。
+
+- 减少修改字符串的内存重新分配次数
+
+  C语言由于不记录字符串的长度，所以如果要修改字符串，必须要重新分配内存（先释放再申请）。因为如果没有重新分配，字符串长度增大时会造成内存缓冲区溢出，字符串长度减小时会造成内存泄露。
+
+  而对于SDS，由于`len`属性和`alloc`属性的存在，对于修改字符串SDS实现了**空间预分配**和**惰性空间释放**两种策略：
+
+  1. 空间预分配：对字符串进行空间扩展的时候，扩展的内存比实际需要的多，这样可以减少连续执行字符串增长操作所需的内存重分配次数。
+  2. 惰性空间释放：对字符串进行缩短操作时，程序不立即使用内存重新分配来回收缩短后多余的字节，而是使用`alloc`属性将这些字节的数量记录下来，等待后续使用。（当然SDS也提供了相应的API，当有需要时也可以手动释放这些未使用的空间。）
+
+- 二进制安全
+
+  因为C字符串以空字符作为字符串结束的标识，而对于一些二进制文件（如图片等），内容可能包括空字符串，因此C字符串无法正确存取；而所有SDS的API都是以处理二进制的方式来处理 `buf[]` 里面的元素，并且SDS不是以空字符串来判断是否结束，而是以`len`属性表示的长度来判断字符串是否结束。
+
+- 兼容部分C字符串函数
+
+  虽然SDS是二进制安全的，但是一样遵从每个字符串都是以空字符串结尾的惯例，这样可以重用C语言库`<string.h>` 中的一部分函数。
+
+##### 空间预分配进一步理解
+
+参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#%E7%A9%BA%E9%97%B4%E9%A2%84%E5%88%86%E9%85%8D%E8%A1%A5%E8%BF%9B%E4%B8%80%E6%AD%A5%E7%90%86%E8%A7%A3)
+
+##### 小结
+
+C字符串和SDS之间的区别：
+
+|                  C字符串                   |                      SDS                       |
+| :----------------------------------------: | :--------------------------------------------: |
+|        获取字符串长度的复杂度为O(n)        |        获取字符串长度的复杂度为**O(1)**        |
+|    API是不安全的，可能会造成缓冲区溢出     |      API是安全的，**不会造成缓冲区溢出**       |
+| 修改字符串长度N次必然需要执行N次内存重分配 | 修改字符串长度N次**最多需要执行N次内存重分配** |
+|              只能保存文本数据              |          可以保存**文本或二进制数据**          |
+|      可以使用所有`<string.h>`库中函数      |       只可以使用部分`<string.h>`库中函数       |
+
+一般来说，SDS除了保存数据库中的字符串值以外，还可以作为缓冲区（buffer）：包括AOF模块中的AOF缓冲区以及客户端状态中的输入缓冲区。
+
+#### ziplist 压缩列表
+
+> ziplist是为了提高存储效率而设计的一种特殊编码的**双向链表**。它可以存储字符串或者整数，**存储整数时是采用整数的二进制**而不是字符串形式存储。它能在O(1)的时间复杂度下完成list两端的`push`和`pop`操作。但是因为每次操作都需要重新分配ziplist的内存，所以实际复杂度和ziplist的内存使用量相关。
+
+##### 结构
+
+`v6.0`中对应的源码：
+
+![Ziplist 源码](Redis.assets/db-redis-ds-x-5.png)
+
+整个ziplist在内存中的存储格式如下：
+
+![Ziplist 内存存储格式](Redis.assets/db-redis-ds-x-6.png)
+
+- `zlbytes`字段的类型是uint32_t，这个字段中存储的是整个ziplist所占用的内存的字节数。
+- `zltail`字段的类型是uint32_t，它指的是ziplist中最后一个`entry`的偏移量，用于快速定位最后一个entry，以快速完成`pop`等操作。
+- `zllen`字段的类型是uint16_t，它指的是整个ziplit中`entry`的数量。这个值只占2bytes（16位）：如果ziplist中`entry`的数目小于65535（2的16次方），那么该字段中存储的就是实际`entry`的值。若等于或超过65535，那么该字段的值固定为65535，但实际数量需要遍历所有`entry`才能得到。
+- `zlend`是一个终止字节，其值为全F，即0xff。ziplist保证任何情况下，一个`entry`的首字节都不会是255。
+
+##### Entry结构
+
+参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#entry%E7%BB%93%E6%9E%84)
+
+##### 为什么ziplist特别省内存？
+
+- ziplist节省内存是相对于普通的list来说的。如果是普通的数组，那么它每个元素占用的内存是一样的且取决于最大的那个元素（很明显它是需要预留空间的）。
+- 所以ziplist在设计时就很容易想到要尽量让每个元素按照实际的内容大小存储，**所以增加encoding字段**，针对不同的encoding来细化存储大小。
+- 这时候还需要解决的一个问题是遍历元素时如何定位下一个元素呢？在普通数组中每个元素定长，所以不需要考虑这个问题；但是ziplist中每个data占据的内存不一样，所以为了解决遍历，需要增加记录上一个元素的length，**所以增加了prelen字段**。
+
+##### ziplist的缺点
+
+- ziplist也不预留内存空间，并且在移除结点后也是立即缩容，这代表每次写操作都会进行内存分配操作。
+- 结点如果扩容导致结点占用的内存增长，并且超过254字节的话，可能会导致链式反应：其后一个结点的`entry.prevlen`需要从一字节扩容至五字节。**最坏情况下，第一个结点的扩容会导致整个ziplist表中的后续所有结点的`entry.prevlen`字段扩容**。虽然这个内存重分配的操作依然只会发生一次，但在代码中时间复杂度是O(N)级别，因为链式扩容只能一步一步的计算。但这种情况的概率十分的小。
+
+#### quicklist 快表
+
+> quicklist这个结构是Redis在`v3.2`版本后新加的，之前的版本是list（即linkedlist），用于String数据类型中。
+
+它是一种以**ziplist为结点的双端链表**结构。宏观上，quicklist是一个链表；微观上，链表中的每个结点都是一个ziplist。
+
+##### 结构
+
+`v6.0`源码：
+
+```c
+/* Node, quicklist, and Iterator are the only data structures used currently. */
+
+/* quicklistNode is a 32 byte struct describing a ziplist for a quicklist.
+ * We use bit fields keep the quicklistNode at 32 bytes.
+ * count: 16 bits, max 65536 (max zl bytes is 65k, so max count actually < 32k).
+ * encoding: 2 bits, RAW=1, LZF=2.
+ * container: 2 bits, NONE=1, ZIPLIST=2.
+ * recompress: 1 bit, bool, true if node is temporarry decompressed for usage.
+ * attempted_compress: 1 bit, boolean, used for verifying during testing.
+ * extra: 10 bits, free for future use; pads out the remainder of 32 bits */
+typedef struct quicklistNode {
+    struct quicklistNode *prev;
+    struct quicklistNode *next;
+    unsigned char *zl;
+    unsigned int sz;             /* ziplist size in bytes */
+    unsigned int count : 16;     /* count of items in ziplist */
+    unsigned int encoding : 2;   /* RAW==1 or LZF==2 */
+    unsigned int container : 2;  /* NONE==1 or ZIPLIST==2 */
+    unsigned int recompress : 1; /* was this node previous compressed? */
+    unsigned int attempted_compress : 1; /* node can't compress; too small */
+    unsigned int extra : 10; /* more bits to steal for future usage */
+} quicklistNode;
+
+/* quicklistLZF is a 4+N byte struct holding 'sz' followed by 'compressed'.
+ * 'sz' is byte length of 'compressed' field.
+ * 'compressed' is LZF data with total (compressed) length 'sz'
+ * NOTE: uncompressed length is stored in quicklistNode->sz.
+ * When quicklistNode->zl is compressed, node->zl points to a quicklistLZF */
+typedef struct quicklistLZF {
+    unsigned int sz; /* LZF size in bytes*/
+    char compressed[];
+} quicklistLZF;
+
+/* Bookmarks are padded with realloc at the end of of the quicklist struct.
+ * They should only be used for very big lists if thousands of nodes were the
+ * excess memory usage is negligible, and there's a real need to iterate on them
+ * in portions.
+ * When not used, they don't add any memory overhead, but when used and then
+ * deleted, some overhead remains (to avoid resonance).
+ * The number of bookmarks used should be kept to minimum since it also adds
+ * overhead on node deletion (searching for a bookmark to update). */
+typedef struct quicklistBookmark {
+    quicklistNode *node;
+    char *name;
+} quicklistBookmark;
+
+
+/* quicklist is a 40 byte struct (on 64-bit systems) describing a quicklist.
+ * 'count' is the number of total entries.
+ * 'len' is the number of quicklist nodes.
+ * 'compress' is: -1 if compression disabled, otherwise it's the number
+ *                of quicklistNodes to leave uncompressed at ends of quicklist.
+ * 'fill' is the user-requested (or default) fill factor.
+ * 'bookmakrs are an optional feature that is used by realloc this struct,
+ *      so that they don't consume memory when not used. */
+typedef struct quicklist {
+    quicklistNode *head;
+    quicklistNode *tail;
+    unsigned long count;        /* total count of all entries in all ziplists */
+    unsigned long len;          /* number of quicklistNodes */
+    int fill : QL_FILL_BITS;              /* fill factor for individual nodes */
+    unsigned int compress : QL_COMP_BITS; /* depth of end nodes not to compress;0=off */
+    unsigned int bookmark_count: QL_BM_BITS;
+    quicklistBookmark bookmarks[];
+} quicklist;
+
+typedef struct quicklistIter {
+    const quicklist *quicklist;
+    quicklistNode *current;
+    unsigned char *zi;
+    long offset; /* offset in current ziplist */
+    int direction;
+} quicklistIter;
+
+typedef struct quicklistEntry {
+    const quicklist *quicklist;
+    quicklistNode *node;
+    unsigned char *zi;
+    unsigned char *value;
+    long long longval;
+    unsigned int sz;
+    int offset;
+} quicklistEntry;
+```
+
+这里定义了6个结构体：
+
+- `quicklistNode`：宏观上，quicklist是一个链表。这个结构描述的就是链表中的结点。它通过`zl`字段持有底层的ziplist。简单来讲，它描述了一个ziplist实例。
+- `quicklistLZF`：ziplist是一段连续的内存，用LZ4算法压缩后就可以包装成一个`quicklistLZF`结构。是否压缩quicklist中的每个ziplist实例是一个可配置项。若这个配置项是开启的，那么`quicklistNode.zl`字段指向的就不是一个ziplist实例，而是一个压缩后的quicklistLZF实例。
+- `quicklistBookmark`：在quicklist尾部增加的一个书签，只有在大量结点的多余内存使用量可以忽略不计且确实需要分批迭代它们的情况下，它才会被使用。当不使用它们时，它们不会增加任何内存开销。
+- `quicklist`：这就是一个双链表的定义。`head`和`tail`分别指向头、尾指针，`len`代表链表中的结点，`count`指的是整个quicklist中的所有ziplist中的`entry`的数目，`fill`字段影响着每个链表结点中ziplist的最大占用空间，`compress`影响着是否要对每个ziplist以LZ4算法进行进一步压缩以更节省内存空间。
+- `quicklistIter`是一个迭代器。
+- `quicklistEntry`是对ziplist中的`entry`概念的封装。quicklist作为一个封装良好的数据结构，不希望使用者感知到其内部的实现，所以需要把`ziplist.entry`的概念重新包装一下。
+
+##### 内存布局图
+
+![quicklist 内存布局图](Redis.assets/db-redis-ds-x-4.png)
+
+##### 更多额外信息
+
+参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#quicklist%E6%9B%B4%E5%A4%9A%E9%A2%9D%E5%A4%96%E4%BF%A1%E6%81%AF)
+
+#### dict 字典/哈希表
+
+> 本质上就是哈希表，这个在很多语言中都有，对于开发人员人员来说比较熟悉，这里就简单介绍下。
+
+##### 结构
+
+哈希表结构定义：
+
+```c
+著作权归https://pdai.tech所有。
+链接：https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html
+
+typedef struct dictht{
+    //哈希表数组
+    dictEntry **table;
+    //哈希表大小
+    unsigned long size;
+    //哈希表大小掩码，用于计算索引值
+    //总是等于 size-1
+    unsigned long sizemask;
+    //该哈希表已有节点的数量
+    unsigned long used;
+ 
+}dictht
+```
+
+哈希表是由数组table组成，table中每个元素都是指向`dict.h/dictEntry`结构，`dictEntry`结构定义如下：
+
+```c
+typedef struct dictEntry{
+     //键
+     void *key;
+     //值
+     union{
+          void *val;
+          uint64_tu64;
+          int64_ts64;
+     }v;
+     //指向下一个哈希表节点，形成链表
+     struct dictEntry *next;
+}dictEntry
+```
+
+**key用来保存键，val属性用来保存值**，值可以是一个指针，也可以是uint64_t整数，也可以是int64_t整数。
+
+注意这里还有一个**指向下一个哈希表节点的指针**。哈希表最大的问题是存在**哈希冲突**，如何解决哈希冲突，有**开放地址法和链地址法**。这里采用的便是链地址法，通过`next`这个指针可以将多个哈希值相同的键值对连接在一起，用来**解决哈希冲突**。
+
+![连接键值对](Redis.assets/db-redis-ds-x-13.png)
+
+##### 一些要点
+
+参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#%E4%B8%80%E4%BA%9B%E8%A6%81%E7%82%B9)
+
+#### intset 整数集
+
+> intset是集合类型的底层实现之一，当一个集合只包含整数值元素，并且这个集合的元素数量不多时，Redis就会使用整数集合作为集合键的底层实现。
+
+##### 结构
+
+源码结构：
+
+```c
+typedef struct intset {
+    uint32_t encoding;
+    uint32_t length;
+    int8_t contents[];
+} intset;
+```
+
+- `encoding`表示编码方式，取值有三个：`INTSET_ENC_INT16`、`INTSET_ENC_INT32`、 `INTSET_ENC_INT64`。
+- `length`代表其中存储的整数的个数。
+- `contents`指向实际存储数值的连续内存区域，就是一个数组；整数集合的每个元素都是`contents`数组的一个数组项（item），各个项在数组中按值的大小**从小到大有序排序**，且数组中不包含任何重复项。（虽然intset结构将`contents`属性声明为int8_t类型的数组，但实际上`contents`数组并不保存任何int8_t类型的值，contents数组的真正类型取决于`encoding`属性的值）
+
+##### 内存布局图
+
+![inset 内存布局图](Redis.assets/db-redis-ds-x-8.png)
+
+`content`数组里面每个元素的数据类型是由`encoding`来决定的，那么如果原来的数据类型是int16, 当再插入一个int32类型的数据时怎么办呢？这就是下面要说的intset的升级。
+
+##### inset升级
+
+当在一个int16类型的整数集合中插入一个int32类型的值时，整个集合的所有元素都会转换成int32类型。 整个过程有三步：
+
+1. 根据新元素的类型（比如int32），扩展整数集合底层数组的空间大小，并为新元素分配空间。
+2. 将底层数组现有的所有元素都转换成与新元素相同的类型，并将类型转换后的元素放置到正确的位上，而且在放置元素的过程中，需要继续维持底层数组的有序性质不变。
+3. 最后改变`encoding`的值，`length`+1。
+
+**那如果删除掉刚加入的int32类型时，会不会做一个降级操作呢**？不会。主要还是减少开销的权衡。
+
+#### zskiplist 跳表
+
+对于一个单链表来讲，即便链表中存储的数据是有序的，如果我们要想在其中查找某个数据，也只能从头到尾遍历链表。这样查找效率就会很低，时间复杂度是O(n)。比如查找12需要7次查找：
+
+![单链表遍历查找元素](Redis.assets/db-redis-ds-x-9.png)
+
+如果增加如下两级索引，那么它搜索次数就变成了3次：
+
+![增加多级索引](Redis.assets/db-redis-ds-x-10.png)
+
+##### 设计
+
+跳跃表并没有在单独的类中定义，而是其定义在`server.h`中，如下：
+
+```c
+/* ZSETs use a specialized version of Skiplists */
+typedef struct zskiplistNode {
+    sds ele;
+    double score;
+    struct zskiplistNode *backward;
+    struct zskiplistLevel {
+        struct zskiplistNode *forward;
+        unsigned int span;
+    } level[];
+} zskiplistNode;
+
+typedef struct zskiplist {
+    struct zskiplistNode *header, *tail;
+    unsigned long length;
+    int level;
+} zskiplist;
+```
+
+其内存布局如下：
+
+![zskiplist 内存布局图](Redis.assets/db-redis-ds-x-11.png)
+
+**zskiplist的核心设计要点**：
+
+- **头结点**不持有任何数据，且其`level[]`的长度为32。
+- 每个结点：
+  - `ele`字段，持有数据，是SDS类型。
+  - `score`字段，标示着结点的得分，结点之间凭借得分来判断先后顺序，跳跃表中的结点按结点的得分**升序排列**。
+  - `backward`指针，这是原版跳跃表中所没有的。该指针指向结点的前一个紧邻结点
+  - `level`字段，用以记录所有结点（除头节点外）；每个结点中最多持有32个zskiplistLevel结构。实际数量在结点创建时，按幂次定律随机生成（不超过32）。每个zskiplistLevel中有两个字段：
+    - `forward`字段指向比自己得分高的某个结点（不一定是紧邻的），并且若当前zskiplistLevel实例在`level[]`中的索引为X，则其`forward`字段指向的结点其`level[]`字段的容量至少是X+1。这也是上图中，为什么`forward`指针总是画得水平的原因。
+    - `span`字段代表`forward`字段指向的结点距离当前结点的距离。紧邻的两个结点之间的距离定义为1。
+
+##### 为什么不用平衡树或者哈希表？
+
+参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%94%A8%E5%B9%B3%E8%A1%A1%E6%A0%91%E6%88%96%E8%80%85%E5%93%88%E5%B8%8C%E8%A1%A8)
+
+### Redis对象与编码（底层结构）对应关系
+
+![Redis 底层设计](Redis.assets/db-redis-object-2-4.png)
+
+#### 字符串对象
+
+> 字符串是Redis最基本的数据类型，不仅所有Key都是字符串类型，其它几种数据类型构成的元素也是字符串。注意字符串的长度不能超过**512M**。
+
+##### 编码
+
+字符串对象的编码可以是以下三种：
+
+- `int 编码`：保存的是可以用long类型表示的整数值。
+- `embstr 编码`：保存长度小于44字节的字符串（Redis `v3.2`版本之前是39字节，之后是44字节）。
+- `raw 编码`：保存长度大于44字节的字符串（Redis `v3.2`版本之前是39字节，之后是44字节）。
+
+![字符串对象的编码](Redis.assets/db-redis-x-object-4.png)
+
+##### 内存布局
+
+三种编码方式对应的内存布局分别如下：
+
+![三种编码方式的内存布局](Redis.assets/db-redis-ds-x-21.png)
+
+##### 编码转换
+
+当`int`编码保存的值不再是整数，或大小超过了long的范围时，自动转化为`raw`。
+
+对于`embstr`编码，由于Redis没有对其编写任何的修改程序（`embstr`是**只读**的），在对`embstr`进行修改时，都会先转化为`raw`再进行修改，因此只要是修改`embstr`对象，修改后的对象一定是`raw`的，无论是否达到了44个字节。
+
+#### 列表对象
+
+> List列表是简单的字符串列表，按照插入顺序排序，可以添加一个元素到列表的头部（左边）或者尾部（右边），它的底层实际上是个链表结构。
+
+##### 编码
+
+列表对象的编码是`quicklist`（之前版本中有`linkedlist`和`ziplist`这两种编码。进一步地，目前Redis定义的10个对象编码方式宏名中有两个被完全闲置了：`OBJ_ENCODING_ZIPMAP`与`OBJ_ENCODING_LINKEDLIST`。 从Redis的演进历史上来看，前者是后续可能会得到支持的编码值（代码还在）, 后者则应该是被彻底淘汰了)
+
+##### 内存布局
+
+![列表对象的内存布局](Redis.assets/db-redis-ds-x-22.png)
+
+#### 哈希对象
+
+> 哈希对象的键是一个字符串类型，值是一个键值对集合。
+
+##### 编码
+
+哈希对象的编码可以是ziplist或者hashtable，对应的底层实现有两种：一种是ziplist，一种是dict。两种编码**内存布局**分别如下：
+
+![哈希对象两种编码的内存布局](Redis.assets/db-redis-ds-x-23.png)
+
+##### 举例说明
+
+当使用ziplist，也就是压缩列表作为底层实现时，新增的键值对是保存到压缩列表的表尾。比如执行以下命令：
+
+```sh
+hset profile name "Tom"
+hset profile age 25
+hset profile career "Programmer"
+```
+
+如果使用ziplist，profile存储如下：
+
+![ziplist profile存储](Redis.assets/db-redis-x-object-9.png)
+
+如果使用hashtable，存储如下：
+
+![hashtable 存储](Redis.assets/db-redis-x-object-10.png)
+
+hashtable编码的哈希表对象底层使用字典数据结构，哈希对象中的每个键值对都使用一个字典键值对。
+
+##### 编码转换
+
+和上面列表对象使用ziplist编码一样，当同时满足下面两个条件时，使用ziplist（压缩列表）编码
+
+1. 列表保存元素个数小于512个
+2. 每个元素长度小于64字节
+
+不能满足这两个条件的时候使用hashtable编码。以上两个条件也可以通过Redis配置文件`zset-max-ziplist-entries` 选项和 `zset-max-ziplist-value` 进行修改。
+
+#### 集合对象
+
+> 集合对象Set是String类型（整数也会转换成String类型进行存储）的无序集合。注意集合和列表的区别：集合中的元素是无序的，因此不能通过索引来操作元素；集合中的元素不能有重复。
+
+##### 编码
+
+集合对象的编码可以是intset或者hashtable；底层实现有两种，分别是intset和dict。显然当使用intset作为底层实现的数据结构时，集合中存储的只能是数值数据且必须是整数；而当使用dict作为集合对象的底层实现时，是将数据全部存储于dict的键中，值字段闲置不用。
+
+集合对象的内存布局如下：
+
+![集合对象内存布局](Redis.assets/db-redis-ds-x-24.png)
+
+##### 举例说明
+
+```sh
+SADD numbers 1 3 5
+```
+
+![集合对象的intset](Redis.assets/db-redis-x-object-11.png)
+
+```sh
+SADD Dfruits "apple" "banana" "cherry"
+```
+
+![集合对象的hashtable](Redis.assets/db-redis-x-object-12.png)
+
+##### 编码转换
+
+当集合同时满足以下两个条件时使用intset编码：
+
+1. 集合对象中所有元素都是整数
+2. 集合对象所有元素数量不超过512
+
+不能满足这两个条件的就使用hashtable编码。第二个条件可以通过配置文件的 `set-max-intset-entries` 进行配置。
+
+#### 有序集合对象
+
+> 和上面的集合对象相比，有序集合对象是有序的。与列表使用索引下标作为排序依据不同，有序集合为每个元素设置一个分数（score）作为排序依据。
+
+##### 编码
+
+有序集合的底层实现依然有两种，一种是使用ziplist作为底层实现，另外一种比较特殊，底层使用了两种数据结构：dict与skiplist。前者对应的编码值宏为ZIPLIST，后者对应的编码值宏为SKIPLIST。
+
+**使用ziplist来实现在序集合很容易理解**，只需要在ziplist这个数据结构的基础上做好排序与去重就可以了。**使用zskiplist来实现有序集合也很容易理解**，Redis中实现的这个跳跃表似乎天然就是为了实现有序集合对象而实现的，那么为什么还要辅助一个dict实例呢? 先看来有序集合对象在这两种编码方式下的内存布局，然后再做解释。
+
+首先是编码为ZIPLIST时，有序集合的内存布局如下：
+
+![有序集合 ziplist](Redis.assets/db-redis-ds-x-25.png)
+
+然后是编码为SKIPLIST时，有序集合的内存布局如下：
+
+![有序集合 skiplist](Redis.assets/db-redis-ds-x-26.png)
+
+说明：其实有序集合单独使用字典或跳跃表其中一种数据结构都可以实现，但是这里使用两种数据结构组合起来，**原因是假如我们单独使用字典，虽然能以O(1)的时间复杂度查找成员的分值，但是因为字典是以无序的方式来保存集合元素，所以每次进行范围操作的时候都要进行排序；假如单独使用跳跃表来实现，虽然能执行范围操作，但是查找操作由O(1)的复杂度变为了O(logN)**。因此Redis使用了两种数据结构来共同实现有序集合。
+
+##### 举例说明
+
+```sh
+ZADD price 8.5 apple 5.0 banana 6.0 cherry
+```
+
+![Zset 举例](Redis.assets/db-redis-x-object-13.png)
+
+![Zset 存储](Redis.assets/db-redis-x-object-14.png)
+
+##### 编码转换
+
+当有序集合对象同时满足以下两个条件时，对象使用ziplist编码：
+
+1. 保存的元素数量小于128。
+2. 保存的所有元素长度都小于64字节。
+
+不能满足上面两个条件的使用skiplist编码。以上两个条件也可以通过Redis配置文件`zset-max-ziplist-entries` 选项和 `zset-max-ziplist-value` 进行修改。
+
+### 总结
+
 
 
 
@@ -1262,7 +1750,7 @@ SDS的总体概览如下图：
 
 可参考 javaguide 和 java全站知识体系中的问题汇总
 
-#### 缓存淘汰策略★
+#### 缓存淘汰策略
 
 
 
