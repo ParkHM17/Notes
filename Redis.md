@@ -1189,7 +1189,7 @@ OK
 
 详细使用参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-type-special.html#geospatial-%E5%9C%B0%E7%90%86%E4%BD%8D%E7%BD%AE)
 
-## Redis `v5.0`新数据结构
+### Redis `v5.0`新数据结构
 
 Redis的作者在`v5.0`中放出一个新的数据结构——Stream。Stream的内部其实也是一个队列，**每一个不同的key，对应的是不同的队列，每个队列的元素（也就是消息）都有一个`msgid`，并且需要保证`msgid`是严格递增的**。
 
@@ -1199,13 +1199,54 @@ Redis的作者在`v5.0`中放出一个新的数据结构——Stream。Stream的
 
 详细使用参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-type-stream.html)
 
-## 底层数据结构
+### 底层数据结构
 
+在前面对redisObject有了初步认识之后，可以继续理解如下的底层数据结构部分：
 
+![Redis 底层数据结构](Redis.assets/db-redis-object-2-3.png)
 
+#### SDS 简单动态字符串
 
+> Redis是用C语言写的，但是Redis中的字符串却不是C语言中的字符串（即以空字符'\0'结尾的字符数组）。它是自己构建了一种名为**简单动态字符串（Simple Dynamic String, SDS**）的抽象类型，并将**SDS作为Redis的默认字符串表示**。
 
+##### SDS定义
 
+> 这是一种用于**存储二进制数据**的一种结构,，具有动态扩容的特点，其实现位于**src/sds.h**与**src/sds.c**中。
+
+SDS的总体概览如下图：
+
+![sds](Redis.assets/sds.png)
+
+其中：
+
+- `sdshdr`（SDS Header）：头部。
+- `buf[]`：真实存储用户数据的字节数组。在`buf[]`中数据后总跟着一个'\0'，即图中`数据+'\0'`是所谓的`buf[]`。
+- `len`：记录当前已使用的字节数（不包括'\0'）。
+- `alloc`：记录当前字节数组总共分配的字节数量（不包括'\0'），分别以uint8（对应sdshdr8）、uint16、uint32、uint64表示。
+- `flags`：始终为一字节，以低三位标识头部类型，高5位未使用。
+
+`flags`值定义如下：
+
+```c
+// flags值定义
+#define SDS_TYPE_5  0
+#define SDS_TYPE_8  1
+#define SDS_TYPE_16 2
+#define SDS_TYPE_32 3
+#define SDS_TYPE_64 4
+```
+
+下面是v6.0源码中SDS相关的结构定义：
+
+![SDS 源码](Redis.assets/db-redis-ds-x-1.png)
+
+可以看到SDS有5种不同的头部，其中`sdshdr5`实际并未使用到，所以实际上有4种不同的头部，分别如下：
+
+![SDS 4种头部](Redis.assets/db-redis-ds-x-2.png)
+
+##### 为什么使用SDS
+
+> **为什么不使用C语言字符串实现，而是使用SDS**？这样实现有什么好处？
 
 
 
