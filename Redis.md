@@ -729,6 +729,14 @@ Redlock只有建立在**时钟正确**的前提下才能正常工作，如果可
 - **对象设计机制**：对象结构（redisObject）
 - **编码类型和底层数据结构**：对应编码的数据结构
 
+## redisObject
+
+### 为什么需要redisObject？
+
+### redisObject数据结构
+
+
+
 ## 基础数据类型
 
 Redis中所有的**key（键）都是字符串**，所以数据类型是指**存储值的数据类型**，主要包括常见的5种基础数据类型，分别是：String、List、Set、Zset、Hash。
