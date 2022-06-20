@@ -42,8 +42,6 @@ Redis是一个**key-value**存储系统（键值对存储系统），支持丰�
 
 ## 二、Redis持久化:rocket:
 
-参考链接：[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#redis-%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6)、[博客园](https://www.cnblogs.com/ysocean/p/9114268.html)、[博客园](https://www.cnblogs.com/ysocean/p/9114267.html)、[CSDN](https://lansonli.blog.csdn.net/article/details/102648597)、[掘金](https://juejin.cn/post/6844904089722028045)、[Redis文档](https://redis.io/docs/manual/persistence/)
-
 ### 2.1 Redis持久化简介
 
 > 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-rdb-aof.html#redis%E6%8C%81%E4%B9%85%E5%8C%96%E7%AE%80%E4%BB%8B)
@@ -62,7 +60,7 @@ Redis是个基于**内存**的数据库。一旦宕机，内存中的数据将�
 
 ### 2.2 RDB持久化
 
-> 参考链接：[CSDN](https://lansonli.blog.csdn.net/article/details/102648597)
+> 参考链接：[CSDN](https://lansonli.blog.csdn.net/article/details/102648597)、[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-rdb-aof.html#rdb-%E6%8C%81%E4%B9%85%E5%8C%96)
 
 #### 简介
 
@@ -82,9 +80,11 @@ RDB持久化方式能够在**指定的时间间隔能对你的数据进行快照
 
 这种工作方式使得Redis可以从**写时复制（Copy-on-Write）**机制中获益。
 
-#### 三种触发机制
+#### 触发方式
 
-##### `save`命令（同步机制）:rainbow:
+##### 手动触发
+
+###### `save`命令（同步机制）
 
 `save`命令执行一个同步操作，以`.rdb`文件的方式保存所有数据的快照。
 
@@ -95,11 +95,11 @@ OK
 
 ![save](Redis.assets/redis-save-info.png)
 
-由于`save`命令是**同步命令**，会占用Redis的主进程。若Redis数据非常多时，`save`命令执行速度会非常慢，**阻塞**所有客户端的请求。因此很少在生产环境直接使用`save`命令，可以使用`bgsave`命令代替。如果在`bgsave`命令的保存数据的子进程发生错误，用`save`命令保存最新的数据是最后的手段。
+由于`save`命令是**同步命令**，会占用Redis的主进程。若Redis数据非常多时，`save`命令执行速度会非常慢，**阻塞**所有客户端的请求。因此**很少**在生产环境直接使用`save`命令，可以使用`bgsave`命令代替。如果在`bgsave`命令的保存数据的子进程发生错误，用`save`命令保存最新的数据是最后的手段。
 
 ![save阻塞](Redis.assets/redis-save-block.png)
 
-##### `bgsave`命令（异步机制）
+###### `bgsave`命令（异步机制）
 
 `bgsave`命令执行一个异步操作，以`.rdb`文件的方式保存所有数据的快照。
 
@@ -122,19 +122,40 @@ Redis使用Linux系统的`fork()`生成一个子进程来将数据保存到磁�
 |  优点  | 不消耗额外内存 |           不阻塞客户端命令           |
 |  缺点  | 阻塞客户端命令 |        需要`fork()`，消耗内存        |
 
-##### 自动生成:rocket:
+##### 自动触发:airplane:
 
-Redis还提供了自动生成`.rdb`文件的方式，可以通过配置文件进行设置，让Redis在**“每N秒内至少有M个键改动”**这一条件满足时，自动进行数据集保存操作。
+在以下几种情况发生时会自动触发：
 
-比如说，以下设置会让Redis在满足“每60秒内有至少有1000个键改动”这一条件满足时，自动进行数据集保存操作：
+- `redis.conf`中配置`save m n`，自动触发`bgsave`生成`.rdb`文件；
+- 主从复制时，**从节点要从主节点进行全量复制时也会触发`bgsave`操作**，生成当时的快照**发送到从节点**；
+- 执行`debug reload`命令重新加载Redis时也会触发`bgsave`操作；
+- 默认情况下执行`shutdown`命令时，如果没有开启AOF持久化，那么也会触发`bgsave`操作；
+- 执行`flushall`命令也会生成`.rdb`文件，但文件为空。
+
+###### `redis.conf`中配置RDB
+
+**快照周期**：内存快照虽然可以通过技术人员手动执行`SAVE`或`BGSAVE`命令来进行，但生产环境下**多数情况都会设置其周期性执行条件**。
+
+（1）Redis中默认的周期性设置
 
 ```sh
-save 60 1000
+# 默认的设置为：
+save 900 1
+save 300 10
+save 60 10000
 ```
+
+`save m n`表示如果“**在m秒内有n条key信息发生变化**”，则进行快照。
 
 ![RDB Configuration](Redis.assets/rdb-conf.png)
 
-其他相关配置：
+如果**只使用Redis的缓存功能，不需要持久化**，那么可以注释掉所有的`save`行或直接添加一个空字符串来实现停用：
+
+```sh
+save ""
+```
+
+（2）其他相关配置：
 
 > 参考链接：[博客园](https://www.cnblogs.com/ysocean/p/9114268.html)
 
@@ -152,21 +173,15 @@ rdbchecksum yes
 - `rdbcompression`：默认值是`yes`。对于存储到磁盘中的快照，可以设置是否进行压缩存储。如果是的话Redis会采用**LZF**算法进行压缩。
 - `rdbchecksum`：默认值是`yes`。在存储快照后，我们还可以让Redis使用**CRC64**算法来进行数据校验。
 
-如果**只使用Redis的缓存功能，不需要持久化**，那么可以注释掉所有的`save`行或直接添加一个空字符串来实现停用：
-
-```sh
-save ""
-```
-
-##### 注意
-
-执行`flushall`或**退出Redis**都会产生`.rdb`文件（前者产生的文件为空）。
-
 #### 恢复数据
 
-将`.rdb`文件移动到**Redis安装目录**并启动服务即可，Redis会自动加载文件数据至内存。Redis 服务器在**载入`.rdb`文件期间会一直处于阻塞状态**，直到载入工作完成为止。
+> 参考链接：[博客园](https://www.cnblogs.com/ysocean/p/9114268.html#_label2)
+
+将`.rdb`文件移动到Redis安装目录并启动服务即可，**Redis会自动加载文件数据至内存**。Redis 服务器在**载入`.rdb`文件期间会一直处于阻塞状态**，直到载入工作完成为止。
 
 #### 优缺点
+
+> 参考链接：[Redis文档](https://redis.io/docs/manual/persistence/#rdb-advantages)
 
 ##### 优点
 
@@ -181,13 +196,29 @@ save ""
 - **不可控、丢失数据风险**：RDB**没有将数据丢失的可能性降到最低**。虽然可以配置多个时间保存点，但如果Redis由于没有正确关闭而直接停止工作，那么还是有可能丢失最新的数据。
 - **耗时、耗性能**：RDB需要经常`fork()`以便使用子进程在磁盘上持久化。如果数据集很大，`fork()`可能会很耗时，并且性能较低的CPU可能还会导致Redis客户端停止几毫秒甚至一秒钟。AOF也需要`fork()`但频率较低，而且可以调整重写日志的频率。
 
-### AOF
+### 2.3 AOF持久化
+
+> 参考链接：[CSDN](https://lansonli.blog.csdn.net/article/details/102648597)、[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-rdb-aof.html#aof-%E6%8C%81%E4%B9%85%E5%8C%96)
 
 #### 简介
 
-从`v1.1`版本开始，Redis增加了一种完全耐久（durable）的持久化方式：AOF持久化。可以在配置文件中打开AOF方式：
+Redis是“写后“日志：**Redis先执行命令，把数据写入内存，然后才记录日志**。日志里记录的是Redis收到的每一条命令，这些命令是以文本形式保存的。
 
-```shell
+![Redis 写后日志](Redis.assets/redis-x-aof-41.jpg)
+
+**为什么采用写后日志**？Redis要求高性能，采用”写后“日志有两方面好处：
+
+- **避免额外的检查开销**：Redis在向AOF里面记录日志的时候，并不会先去对这些命令进行语法检查。所以，如果先记日志再执行命令的话，日志中就有可能记录了错误的命令，Redis在使用日志恢复数据时，就可能会出错。
+- 不会阻塞当前的写操作。
+
+但这种方式**存在潜在风险**：
+
+- 如果命令执行完成，写日志之前宕机了，会丢失数据。
+- 主线程写磁盘压力大，导致写盘慢，阻塞后续操作。
+
+从`v1.1`版本开始，Redis增加了一种完全耐久（Durable）的持久化方式：AOF持久化。可以在配置文件中打开AOF方式：
+
+```sh
 appendonly yes
 ```
 
@@ -199,43 +230,95 @@ appendonly yes
 
 ![AOF恢复](Redis.assets/aof-recovery.png)
 
-#### 三种策略
+#### 如何实现AOF？:airplane:
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-rdb-aof.html#aof-%E6%8C%81%E4%B9%85%E5%8C%96)
+
+AOF日志记录Redis的每个写命令，步骤分为：命令追加（append）、文件写入（write）和文件同步（sync）。
+
+##### 命令追加
+
+当AOF持久化功能打开了，服务器在执行完一个写命令之后，会以**协议格式**将被执行的写命令追加到服务器的`aof_buf`缓冲区。
+
+##### 文件写入和同步
+
+关于何时将`aof_buf`缓冲区的内容写入AOF文件中，Redis提供了三种策略：
+
+![AOF三种写入策略对比](Redis.assets/redis-x-aof-4.jpg)
+
+###### 三种策略
+
+> 参考链接：[CSDN](https://lansonli.blog.csdn.net/article/details/102648597)
 
 可以通过配置参数`appendfsync`来设置Redis多久将数据`fsync()`到磁盘一次。（`fsync()`：Linux系统函数，只针对单个文件，可用于数据库这样的应用程序，这种应用程序需要确保将修改过的块立即写到磁盘上）
 
-##### `always`
+（1）`always`
 
 **每次有新命令追加到AOF文件时就执行一次**`fsync()` ，非常慢但也非常安全。
 
 ![always策略](Redis.assets/aof-always.png)
 
-##### `everysec`
+（2）`everysec`
 
 **每秒一次**`fsync()`：足够快（和RDB持久化差不多），在故障时只会丢失1秒钟的数据。**推荐（且默认）**的策略，可以同时兼顾速度和安全性。
 
 ![everysec策略](Redis.assets/aof-everysec.png)
 
-##### `no`
+（3）`no`
 
-从不`fsync` ：将数据**交给操作系统**来处理，由操作系统来决定什么时候同步数据，更快但更不安全。
+从不`fsync` ：将数据**交给操作系统来处理**，由操作系统来决定什么时候同步数据，更快但更不安全。
 
 ![no策略](Redis.assets/aof-no.png)
 
-##### 三种策略比较
+##### `redis.conf`中配置AOF
 
-|    策略    |       优点        |   缺点   |
-| :--------: | :---------------: | :------: |
-|  `always`  |    不丢失数据     | IO开销大 |
-| `everysec` | 最多丢失1秒钟数据 |  同优点  |
-|    `no`    |  由操作系统代管   |  不可控  |
+默认情况下，Redis是没有开启AOF的，可以通过配置`redis.conf`文件来开启AOF持久化，关于AOF的配置如下：
 
-#### 重写
+```sh
+# appendonly参数开启AOF持久化
+appendonly no
+
+# AOF持久化的文件名，默认是appendonly.aof
+appendfilename "appendonly.aof"
+
+# AOF文件的保存位置和RDB文件的位置相同，都是通过dir参数设置的
+dir ./
+
+# 同步策略
+# appendfsync always
+appendfsync everysec
+# appendfsync no
+
+# aof重写期间是否同步
+no-appendfsync-on-rewrite no
+
+# 重写触发配置
+auto-aof-rewrite-percentage 100
+auto-aof-rewrite-min-size 64mb
+
+# 加载aof出错如何处理
+aof-load-truncated yes
+
+# 文件重写策略
+aof-rewrite-incremental-fsync yes
+```
+
+- `appendonly`：默认情况下AOF功能是关闭的，将该选项改为`yes`以打开Redis的AOF功能。
+- `appendfilename`：AOF文件的名字。
+- `appendfsync`：这个参数项是AOF功能最重要的设置项之一，主要用于设置“**真正执行**”操作命令向AOF文件中同步的策略。
+- `no-appendfsync-on-rewrite`：`always`和`everysec`的设置会使真正的I/O操作高频度的出现，甚至会出现长时间的卡顿情况，为了尽量缓解这个情况，Redis提供了这个设置项，**保证在完成`fsync()`函数调用时，不会将这段时间内发生的命令操作放入操作系统的Page Cache**（这段时间Redis还在接受客户端的各种写操作命令）。
+- `auto-aof-rewrite-percentage`：Redis中对触发自动重写AOF文件的操作提供了两个设置：`auto-aof-rewrite-percentage`表示如果当前AOF文件的大小超过了上次重写后AOF文件的百分之多少后，就再次开始重写AOF文件。
+- `auto-aof-rewrite-min-size`：表示启动AOF文件重写操作的AOF文件最小大小。如果AOF文件大小低于这个值，则不会触发重写操作。注意：如果是手动调用`BGREWRITEAOF`命令，则不受这两个重写参数条件限制。
+
+#### 重写:airplane:
+
+> 参考链接：[CSDN](https://lansonli.blog.csdn.net/article/details/102648597)
 
 因为AOF的运作方式是不断地将命令追加到文件的末尾，所以随着写入命令的不断增加，AOF文件的体积也会变得越来越大。
 
 举个例子，如果你对一个计数器调用了**100次**`INCR`，那么仅仅是为了保存这个计数器的当前值，AOF文件就需要使用**100条记录**（entry）。然而在实际上，只使用**1条`SET`命令**已经足以保存计数器的当前值了，其余99条记录实际上都是多余的。
 
-为了处理这种情况，Redis支持一种有趣的特性：可以在不打断服务客户端的情况下，对AOF文件进行**重建（rebuild）**。
+为了处理这种情况，Redis支持一种有趣的特性：可以在不打断服务客户端的情况下，对AOF文件进行**重建（Rebuild）**。
 
 每当执行`bgrewriteaof`命令，Redis将写最短的命令序列在**内存中重建当前数据集**。`v2.2`需要自己手动执行`bgrewriteaof`命令；`v2.4`则可以通过配置自动触发AOF重写。
 
@@ -247,35 +330,36 @@ appendonly yes
 
 ##### 作用
 
-- **减少磁盘占用量**
-- **加速数据恢复**
+**减少磁盘占用量、加速数据恢复**。
 
 ##### 实现方式
 
-- `bgrewriteaof`
+###### `bgrewriteaof`
 
-  `bgrewriteaof`命令用于**异步执行**一个AOF文件重写操作，会创建一个当前AOF文件的体积优化版本。即使`bgrewriteaof`执行失败，也不会有任何数据丢失，因为旧的AOF文件在 `bgrewriteaof`成功之前不会被修改。`bgrewriteaof`仅仅用于手动触发重写操作。
+`bgrewriteaof`命令用于**异步执行**一个AOF文件重写操作，会创建一个当前AOF文件的体积优化版本。即使`bgrewriteaof`执行失败，也不会有任何数据丢失，因为旧的AOF文件在`bgrewriteaof`成功之前不会被修改。`bgrewriteaof`仅仅用于**手动触发重写操作**。
 
-  如果正在执行的AOF重写返回一个错误，AOF重写将会在**稍后一点的时间重新调用**。
+如果一个子Redis是通过磁盘快照创建的，**AOF重写将会在RDB终止后才开始保存**。这种情况下`BGREWRITEAOF`任然会返回OK状态码。从Redis `v2.6`起可以通过`INFO`命令查看AOF重写执行情况。
 
-  ![AOF bgrewriteaof](Redis.assets/aof-bgrewriteaof.png)
+如果正在执行的AOF重写返回一个错误，AOF重写将会在**稍后一点的时间重新调用**。
 
-- 重写配置
+![AOF bgrewriteaof](Redis.assets/aof-bgrewriteaof.png)
 
-  |            配置名             |              含义               |
-  | :---------------------------: | :-----------------------------: |
-  |  `auto-aof-rewrite-min-size`  |    触发AOF文件重写的最小尺寸    |
-  | `auto-aof-rewrite-percentage` | 触发AOF文件执行重写的最小增长率 |
+###### 重写配置
 
-  |      统计名      |                 含义                  |
-  | :--------------: | :-----------------------------------: |
-  | aof_current_size |        AOF文件当前尺寸（字节）        |
-  |  aof_base_size   | AOF文件上次启动和重写时的尺寸（字节） |
+|            配置名             |              含义               |
+| :---------------------------: | :-----------------------------: |
+|  `auto-aof-rewrite-min-size`  |    触发AOF文件重写的最小尺寸    |
+| `auto-aof-rewrite-percentage` | 触发AOF文件执行重写的最小增长率 |
 
-  AOF重写自动触发机制**需要同时满足**下面两个条件：
+|      统计名      |                 含义                  |
+| :--------------: | :-----------------------------------: |
+| aof_current_size |        AOF文件当前尺寸（字节）        |
+|  aof_base_size   | AOF文件上次启动和重写时的尺寸（字节） |
 
-  1. aof_current_size > `auto-aof-rewrite-min-size`
-  2. (aof_current_size - aof_base_size) / aof_base_size \* 100 > `auto-aof-rewrite-percentage`
+AOF重写自动触发机制**需要同时满足**下面两个条件：
+
+1. aof_current_size > `auto-aof-rewrite-min-size`
+2. (aof_current_size - aof_base_size) / aof_base_size \* 100 > `auto-aof-rewrite-percentage`
 
 ##### 流程
 
@@ -303,9 +387,11 @@ auto-aof-rewrite-percentage 100
 
 #### 优缺点
 
+> 参考链接：[Redis文档](https://redis.io/docs/manual/persistence/#aof-advantages)
+
 ##### 优点
 
-- AOF使得Redis**更具持久性**：可以有3种不同的`fsync`策略。即使使用默认策略`everysec`，写入性能仍然很棒。`fsync`是使用**后台线程执行**的，当没有`fsync`正在进行时，主线程将努力执行写入，因此最多只会丢失一秒钟的数据。
+- AOF使得Redis**更具持久性**：可以有3种不同的`fsync()`策略。即使使用默认策略`everysec`，写入性能仍然很棒。`fsync()`是使用**后台线程执行**的，当没有`fsync()`正在进行时，主线程将努力执行写入，因此最多只会丢失一秒钟的数据。
 - AOF日志是一个**只进行追加**的日志，因此**不会出现寻道（seek）问题**，也不会在断电时出现损坏问题。即使由于某种原因（磁盘已满或其他原因）日志未执行完整的命令而结束，`redis-check-aof`工具也能够轻松修复它。
 - 当AOF变得太大时，Redis能够在后台**自动重写**AOF。重写是**完全安全**的，因为当Redis继续附加到旧文件时，会使用**创建当前数据集所需的最少操作集**生成一个全新的文件，一旦新文件准备就绪，Redis就会从“旧”切换到“新”，开始附加到新文件上。
 - AOF以**易于理解和解析的格式**依次包含所有操作的日志，甚至可以轻松导出AOF文件。例如，即使不小心使用`FLUSHALL`命令刷新了所有内容，只要在此期间没有执行日志重写，仍然可以**通过停止服务器、删除最新命令（即`FLUSHALL`）并重新启动Redis**来恢复数据集。
@@ -313,9 +399,11 @@ auto-aof-rewrite-percentage 100
 ##### 缺点
 
 - AOF文件通常比相同数据集的等效`.rdb`文件**大**。
-- 根据所使用的`fsync`策略，AOF可能比RDB**慢**。 一般来说，将`fsync`设置为**`everysec`时性能仍然非常高**，而在禁用`fsync`的情况下，**即使在高负载下也应该与RDB一样快**。不过在处理巨大写入负载时，RDB仍然能够提供提供更有保证的最大延迟时间（maximum latency latency）。
+- 根据所使用的`fsync()`策略，AOF可能比RDB**慢**。 一般来说，将`fsync()`设置为**`everysec`时性能仍然非常高**，而在禁用`fsync()`的情况下，**即使在高负载下也应该与RDB一样快**。不过在处理巨大写入负载时，RDB仍然能够提供提供更有保证的最大延迟时间（Maximum Latency）。
 
 ### 持久化的抉择
+
+> 参考链接：[CSDN](https://lansonli.blog.csdn.net/article/details/102648597)
 
 #### RDB和AOF对比
 
@@ -330,9 +418,11 @@ auto-aof-rewrite-percentage 100
 
 一般来说， 如果想达到足以媲美PostgreSQL的数据安全性，你应该同时使用两种持久化功能。
 
-如果你可以承受数分钟以内的数据丢失，那么可以只使用RDB持久化；否则就使用AOF重写。但是一般情况下建议不要单独使用某一种持久化机制，而是应该两种一起用（可以达到媲美PostgreSQL的数据安全性）。
+如果你可以承受数分钟以内的数据丢失，那么可以只使用RDB持久化；否则就使用AOF重写。但是一般情况下建议不要单独使用某一种持久化机制，而是应该两种一起用。
 
-### 混合持久化
+#### 混合持久化
+
+> 参考链接：[博客园](https://www.cnblogs.com/ysocean/p/9114267.html)
 
 在Redis `v4.0`之后，新增了**RDB-AOF混合持久化**方式。这种方式结合了RDB和AOF的优点，既能快速加载又能避免丢失过多的数据。具体配置为：
 
@@ -341,11 +431,13 @@ auto-aof-rewrite-percentage 100
 aof-use-rdb-preamble yes
 ```
 
-当开启混合持久化时，主进程先`fork`出**子进程**将现有**内存副本全量以RDB方式写入AOF文件开头**，然后再将缓冲区中的**增量命令以AOF方式写入AOF文件中末尾**，写入完成后通知主进程更新相关信息，并将新的含有RDB和AOF两种格式的**AOF新文件替换旧文件**。
+当开启混合持久化时，主进程先`fork()`出**子进程**将现有**内存副本全量以RDB方式写入AOF文件开头**，然后再将缓冲区中的**增量命令以AOF方式写入AOF文件中末尾**，写入完成后通知主进程更新相关信息，并将**新的含有RDB和AOF两种格式的AOF新文件替换旧文件**。
 
 简单来说：混合持久化方式产生的文件一部分是RDB格式，一部分是AOF格式。
 
 #### 优缺点
+
+> 参考链接：[掘金](https://juejin.cn/post/6844904089722028045)
 
 ##### 优点
 
@@ -353,7 +445,7 @@ aof-use-rdb-preamble yes
 
 ##### 缺点
 
-AOF文件中添加了RDB格式的内容，会使得AOF文件可读性变差；并且如果开启混合持久化，就必须使用Redis `v4.0` 及之后版本。
+AOF文件中添加了RDB格式的内容，会使得AOF文件可读性变差；并且如果开启混合持久化，就必须使用Redis `v4.0`及之后版本（兼容性）。
 
 ## 发布/订阅:boat:
 
