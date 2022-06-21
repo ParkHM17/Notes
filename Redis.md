@@ -88,7 +88,7 @@ RDB持久化方式能够在**指定的时间间隔能对你的数据进行快照
 
 `save`命令执行一个同步操作，以`.rdb`文件的方式保存所有数据的快照。
 
-```sh
+```bash
 127.0.0.1:6379>save
 OK
 ```
@@ -103,7 +103,7 @@ OK
 
 `bgsave`命令执行一个异步操作，以`.rdb`文件的方式保存所有数据的快照。
 
-```sh
+```bash
 127.0.0.1:6379>bgsave
 Background saving started
 ```
@@ -138,7 +138,7 @@ Redis使用Linux系统的`fork()`生成一个子进程来将数据保存到磁�
 
 （1）Redis中默认的周期性设置
 
-```sh
+```bash
 # 默认的设置为：
 save 900 1
 save 300 10
@@ -151,7 +151,7 @@ save 60 10000
 
 如果**只使用Redis的缓存功能，不需要持久化**，那么可以注释掉所有的`save`行或直接添加一个空字符串来实现停用：
 
-```sh
+```bash
 save ""
 ```
 
@@ -367,7 +367,7 @@ AOF重写自动触发机制**需要同时满足**下面两个条件：
 
 #### 相关配置
 
-```shell
+```sh
 # 开启AOF持久化方式
 appendonly yes
 # AOF持久化文件名
@@ -426,7 +426,7 @@ auto-aof-rewrite-percentage 100
 
 在Redis `v4.0`之后，新增了**RDB-AOF混合持久化**方式。这种方式结合了RDB和AOF的优点，既能快速加载又能避免丢失过多的数据。具体配置为：
 
-```shell
+```sh
 # yes为开启，no为禁用
 aof-use-rdb-preamble yes
 ```
@@ -447,13 +447,14 @@ aof-use-rdb-preamble yes
 
 AOF文件中添加了RDB格式的内容，会使得AOF文件可读性变差；并且如果开启混合持久化，就必须使用Redis `v4.0`及之后版本（兼容性）。
 
-## 发布/订阅:boat:
+## 三、Redis发布/订阅:boat:
 
-参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-pub-sub.html)、[Redis命令参考](http://redisdoc.com/pubsub/index.html)
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-pub-sub.html)、[Redis命令参考](http://redisdoc.com/pubsub/index.html)
+>
 
-### 简介
+### 3.1 简介
 
-Redis发布订阅（pub/sub）是一种**消息通信模式**：发送者（pub）发送消息，订阅者（sub）接收消息。
+Redis发布订阅（Pub/Sub）是一种**消息通信模式**：发送者（Pub）发送消息，订阅者（Sub）接收消息。
 
 Redis的`SUBSCRIBE`命令可以让**客户端订阅任意数量的频道**，每当有新信息发送到被订阅的频道时，信息就会被**发送给所有订阅指定频道的客户端**。
 
@@ -461,9 +462,9 @@ Redis的`SUBSCRIBE`命令可以让**客户端订阅任意数量的频道**，每
 
 ![pub/sub-2](Redis.assets/db-redis-sub-2.svg)
 
-当有新消息通过`PUBLISH`命令发送给channel 1时， 这个消息就会被发送给订阅它的三个客户端。
+当有新消息通过`PUBLISH`命令发送给**channel 1**时， 这个消息就会被发送给订阅它的三个客户端。
 
-### 使用方式
+### 3.2 使用方式
 
 Redis有两种发布/订阅模式：基于频道（Channel）的发布/订阅、基于模式（Pattern）的发布/订阅。
 
@@ -477,7 +478,7 @@ Redis有两种发布/订阅模式：基于频道（Channel）的发布/订阅、
 
 发布者发布消息的命令是`publish`，用法是`publish channel message`：
 
-```sh
+```bash
 127.0.0.1:6379> publish channel:1 hi
 (integer) 1
 ```
@@ -490,13 +491,13 @@ Redis有两种发布/订阅模式：基于频道（Channel）的发布/订阅、
 
 例如新开一个客户端订阅上面频道（不会收到消息，因为不会收到订阅之前就发布到该频道的消息）：
 
-```sh
+```bash
 127.0.0.1:6379> subscribe channel:1
 ```
 
 注意：处于此**订阅状态**下客户端不能使用除`subscribe`、`unsubscribe`、`psubscribe`和`punsubscribe`这四个属于"发布/订阅"之外的命令，否则会报错。
 
-进入订阅状态后客户端可能收到**3种类型的回复**。每种类型的回复都包含**3个值**，第一个值是消息的类型，根据消息类型的不同，第二个和第三个参数的含义可能不同。消息类型的取值可能是以下3个:
+进入订阅状态后客户端可能收到**3种类型的回复**。每种类型的回复都包含**3个值**，第一个值是**消息的类型**，根据消息类型的不同，第二个和第三个参数的含义可能不同。**消息类型的取值**可能是以下3个:
 
 - **subscribe**：表示订阅成功的反馈信息。第二个值是订阅成功的**频道名称**，第三个是**当前客户端订阅的频道数量**。
 
@@ -523,7 +524,7 @@ Redis有两种发布/订阅模式：基于频道（Channel）的发布/订阅、
 
 ##### 例子
 
-```sh
+```bash
 # 订阅 news.* 和 tweet.* 两个模式
 
 # 第 1 - 6 行是执行 psubscribe 之后的反馈信息
@@ -566,13 +567,14 @@ Reading messages... (press Ctrl-C to quit)
 
 - 使用`psubscribe`命令可以**重复订阅同一个频道**，如客户端执行了`psubscribe c? c?*`，这时向c1发布消息客户端会接受到**两条消息**，而同时`publish`命令的返回值**是2而不是1**。同样的，如果有另一个客户端执行了`subscribe c1` 和`psubscribe c?*`的话，向c1发送一条消息该客户端也会收到到**2条消息（但是是两种类型：`message`和`pmessage`）**，同时`publish`命令也**返回2**。
 - `punsubscribe`命令可以**退订指定的规则**，用法是：`punsubscribe [pattern [pattern ...]]`，如果没有参数则会退订所有规则。
-- 使用`punsubscribe`只能退订通过`psubscribe`命令订阅的规则，不会影响直接通过`subscribe`命令订阅的频道；同样的，`unsubscribe`命令也不会影响通过`psubscribe`命令订阅的规则。另外需要注意`punsubscribe`命令退订某个规则时不会将其中的通配符展开，而是进行严格的字符串匹配，所以`punsubscribe *` 无法退订`c*`规则，而是必须使用`punsubscribe c*`才可以退订。
+- **使用`punsubscribe`只能退订通过`psubscribe`命令订阅的规则，不会影响直接通过`subscribe`命令订阅的频道**；同样的，`unsubscribe`命令也不会影响通过`psubscribe`命令订阅的规则。另外需要注意`punsubscribe`命令退订某个规则时不会将其中的通配符展开，而是进行严格的字符串匹配，**所以`punsubscribe *` 无法退订`c*`规则，而是必须使用`punsubscribe c*`才可以退订**。
 
-## 实现分布式锁:airplane:
+## 四、实现分布式锁:airplane:
 
-参考链接：[Kaito's Blog](http://kaito-kidd.com/2021/06/08/is-redis-distributed-lock-really-safe/)
+> 参考链接：[Kaito's Blog](http://kaito-kidd.com/2021/06/08/is-redis-distributed-lock-really-safe/)
+>
 
-### 为什么需要分布式锁
+### 4.1 为什么需要分布式锁
 
 与分布式锁相对应的是**单机锁**，在写多线程程序时，避免同时操作一个共享变量产生数据问题，通常会使用一把锁来**互斥**，以保证共享变量的正确性，其使用范围是在**同一个进程**中。
 
@@ -582,29 +584,29 @@ Reading messages... (press Ctrl-C to quit)
 
 ![分布式锁](Redis.assets/Distributed Lock-1.jpg)想要实现分布式锁，必须借助一个**外部系统**，所有进程都去这个系统上申请**加锁**。而这个外部系统，必须要有实现**互斥**的能力，即**两个请求同时进来，只会给一个进程返回成功，另一个返回失败（或等待）**。
 
-这个外部系统，可以是MySQL，也可以是Redis或Zookeeper。但为了追求更好的性能，通常会选择使用Redis或Zookeeper。
+这个外部系统，可以是MySQL，也可以是Redis或Zookeeper。但为了追求更好的性能，通常会选择**使用Redis或Zookeeper**。
 
-### 分布式锁怎么实现
+### 4.2 分布式锁怎么实现
 
-想要实现分布式锁，必须要求Redis有**互斥**的能力。可以使用`SETNX`命令，这个命令表示“**SET** if **N**ot e**X**ists”，即如果key不存在，才会设置它的值，否则什么也不做。两个客户端进程执行这个命令达到互斥，就可以实现一个分布式锁。
+想要实现分布式锁，必须要求Redis有**互斥**的能力。可以使用`SETNX`命令，这个命令表示“**SET** if **N**ot e**X**ists”，即如果key不存在，才会设置它的值，否则什么也不做。两个客户端进程执行这个命令达到**互斥**，就可以实现一个分布式锁。
 
 客户端1申请加锁，加锁成功：
 
-```sh
+```bash
 127.0.0.1:6379> SETNX lock 1
 (integer) 1     // 客户端1，加锁成功
 ```
 
 客户端2申请加锁，因为后到达，加锁失败：
 
-```sh
+```bash
 127.0.0.1:6379> SETNX lock 1
 (integer) 0     // 客户端2，加锁失败
 ```
 
 此时，加锁成功的客户端，就可以去操作**共享资源**。操作完成后，还要及时**释放锁**，给后来者让出操作共享资源的机会。直接使用`DEL`命令删除这个key即可：
 
-```sh
+```bash
 127.0.0.1:6379> DEL lock // 释放锁
 (integer) 1
 ```
@@ -618,13 +620,13 @@ Reading messages... (press Ctrl-C to quit)
 
 这时这个客户端就会一直占用这个锁，而其它客户端就**永远**拿不到这把锁了。
 
-### 如何避免死锁
+### 4.3 如何避免死锁
 
 很容易想到的方案是，在申请锁时，给这把锁设置一个**租期**。
 
 在Redis中实现时，就是给这个key设置一个**过期时间**。这里假设操作共享资源的时间不会超过10s，那么在加锁时，给这个key设置**10s过期**即可：
 
-```sh
+```bash
 127.0.0.1:6379> SETNX lock 1    // 加锁
 (integer) 1
 127.0.0.1:6379> EXPIRE lock 10  // 10s后自动过期
@@ -641,7 +643,7 @@ Reading messages... (press Ctrl-C to quit)
 
 在Redis `v2.6.12`版本之前，我们需要想尽办法保证`SETNX`和`EXPIRE`原子性执行，还要考虑各种异常情况如何处理。但在之后Redis扩展了`SET`命令的参数，用这一条命令就可以了：
 
-```sh
+```bash
 // 一条命令保证原子性执行
 127.0.0.1:6379> SET lock 1 EX 10 NX
 OK
@@ -669,13 +671,13 @@ OK
 
 导致这个问题发生的关键点在于：每个客户端在释放锁时，都是**无脑操作**，并**没有检查这把锁是否还归自己持有**，所以就会出现释放别人锁的风险，这样的解锁流程**并不严谨**！
 
-### 锁被别人释放怎么办
+### 4.4 锁被别人释放怎么办
 
 解决办法是：客户端在加锁时，设置一个只有自己知道的**唯一标识**进去。
 
 例如，这个标识可以是自己的线程ID，也可以是一个UUID（随机且唯一），这里以UUID举例：
 
-```sh
+```bash
 // 锁的VALUE设置为UUID
 127.0.0.1:6379> SET lock $uuid EX 20 NX
 OK
@@ -697,7 +699,7 @@ if redis.get("lock") == $uuid:
 2. 客户端2执行了`SET`命令，强制获取到锁（虽然发生概率比较低，但我们需要严谨地考虑锁的安全性模型）
 3. 客户端1执行`DEL`，却释放了客户端2的锁
 
-由此可见，这两个命令还是必须要原子执行才行。怎样**原子执行**呢？需要使用**Lua脚本**。可以把这个逻辑理解成：写Lua脚本然后让Redis来执行。因为Redis处理每一个请求是**单线程**执行的，所以在执行一个Lua脚本时，其它请求必须等待，直到这个Lua脚本处理完成，这样一来，`GET+DEL`之间就不会插入其它命令了。
+由此可见，这两个命令还是必须要原子执行才行。怎样**原子执行**呢？需要使用**Lua脚本**。可以把这个逻辑理解成：**写Lua脚本然后让Redis来执行**。因为Redis处理每一个请求是**单线程**执行的，所以在执行一个Lua脚本时，其它请求必须等待，直到这个Lua脚本处理完成，这样一来，`GET+DEL`之间就不会插入其它命令了。
 
 ![Lua脚本](Redis.assets/dl-lua.jpg)
 
@@ -713,25 +715,25 @@ else
 end
 ```
 
-这样一路优化，整个的加锁、解锁的流程就**更严谨**了。小结一下，基于Redis实现的分布式锁，一个严谨的流程如下：
+这样一路优化，整个的加锁、解锁的流程就更严谨了。小结一下，基于Redis实现的分布式锁，**一个严谨的流程如下**：
 
-1. 加锁：`SET $lock_key $unique_id EX $expire_time NX`
-2. 操作共享资源
-3. 释放锁：Lua脚本，先`GET`判断锁是否归属自己，再`DEL`释放锁
+1. 加锁：`SET $lock_key $unique_id EX $expire_time NX`；
+2. 操作共享资源；
+3. 释放锁：Lua脚本，先`GET`判断锁是否归属自己，再`DEL`释放锁。
 
 ![Redis分布式锁严谨流程](Redis.assets/dl-lua-process.jpg)
 
 有了这个完整的锁模型，可以重新回到前面提到的第一个问题：锁过期时间不好评估怎么办？
 
-### 锁过期时间不好评估怎么办？
+### 4.5 锁过期时间不好评估怎么办？
 
 前面提到，锁的过期时间如果评估不好，这个锁就会有**提前过期**的风险。前面给的妥协方案是：
 
-> 尽量**冗余过期时间**，降低锁提前过期的概率。
+尽量**冗余过期时间**，降低锁提前过期的概率。
 
 这个方案其实也不能完美解决问题，那怎么办呢？是否可以设计这样的方案：
 
-> 加锁时，**先设置一个过期时间**，然后**开启一个守护线程**，**定时去检测这个锁的失效时间**，如果锁快要过期了，操作共享资源还未完成，那么就**自动对锁进行续期**，重新设置过期时间。
+加锁时，**先设置一个过期时间**，然后**开启一个守护线程**，**定时去检测这个锁的失效时间**，如果锁快要过期了，操作共享资源还未完成，那么就**自动对锁进行续期**，重新设置过期时间。
 
 这确实一种比较好的方案。幸运的是在Java中已经有一个库把这些工作都封装好了：**Redisson**。
 
@@ -749,14 +751,14 @@ Redisson是一个基于Java语言实现的Redis SDK客户端，在使用分布�
 
 那么还会有哪些问题场景会危害Redis锁的安全性呢？之前分析的场景都是，锁在**单个Redis实例中**可能产生的问题，并没有涉及到Redis的部署架构细节。
 
-而通常在使用Redis时，一般会采用**主从集群 + 哨兵**的模式部署，这样做的好处在于：当主库异常宕机时，哨兵可以实现**故障自动切换**，把从库提升为主库，继续提供服务，以此保证可用性。
+而通常在使用Redis时，一般会采用**主从集群 + 哨兵**的模式部署，这样做的好处在于：当主库异常宕机时，哨兵可以实现**故障自动切换**，**把从库提升为主库**，继续提供服务，以此保证可用性。
 
 **那当发生主从切换时，这个分布锁是否依旧安全？**
 
 试想这样的场景：
 
-1. 客户端1在主库上执行`SET`命令，加锁成功
-2. 此时主库异常宕机，`SET`命令还未同步到从库上（**主从复制是异步的**）
+1. 客户端1在主库上执行`SET`命令，加锁成功；
+2. 此时主库异常宕机，`SET`命令还未同步到从库上（**主从复制是异步的**）；
 3. 从库被哨兵提升为新主库，这个锁在新的主库上丢失了！
 
 ![主从切换时丢锁](Redis.assets/dl-lose lock.jpg)
@@ -765,16 +767,16 @@ Redisson是一个基于Java语言实现的Redis SDK客户端，在使用分布�
 
 为此，Redis的作者提出一种解决方案，就是我们经常听到的**Redlock（红锁）**。
 
-### Redlock真的安全么？
+### 4.6 Redlock真的安全么？
 
 Redis作者提出的Redlock方案基于2个前提：
 
-1. 不再需要部署**从库**和**哨兵**实例，只部署**主库**
-2. 但主库要部署多个，官方推荐至少5个实例
+1. 不再需要部署**从库**和**哨兵**实例，只部署**主库**。
+2. 但主库要部署多个，官方推荐至少5个实例。
 
 也就是说，想要使用Redlock至少要部署5个Redis实例，而且**都是主库**（它们之间没有任何关系，都是孤立的）。
 
-> **注意：不是部署 Redis Cluster，就是部署 5 个简单的 Redis 实例。**
+**注意：不是部署 Redis Cluster，就是部署 5 个简单的 Redis 实例。**
 
 ![Redlock部署5个实例](Redis.assets/dl-redlock-5redis.jpg)
 
@@ -805,7 +807,7 @@ Redlock为什么要这么做？
 
 这是一个分布式系统**容错**问题，这个问题的结论是：
 
-> **如果存在「故障」节点，只要大多数节点正常，那么整个系统依旧是可以提供正确服务的。**
+**如果存在「故障」节点，只要大多数节点正常，那么整个系统依旧是可以提供正确服务的。**
 
 #### （3）为什么需要计算加锁的累计耗时？
 
@@ -819,11 +821,12 @@ Redlock为什么要这么做？
 
 所以释放锁时，不管之前有没有加锁成功，都需要释放**所有节点**的锁，以保证清理节点上**残留**的锁。
 
-#### 关于Redlock的争论
+#### 关于Redlock的争论:rainbow:
 
-参考开头的链接。
+> 参考链接：[Kaito's Blog](http://kaito-kidd.com/2021/06/08/is-redis-distributed-lock-really-safe/)
+>
 
-### 对分布式锁的理解（博客作者）
+### 4.7 对分布式锁的理解（博客作者）
 
 #### （1）到底要不要用Redlock？
 
@@ -834,33 +837,419 @@ Redlock只有建立在**时钟正确**的前提下才能正常工作，如果可
 
 所以博客作者对Redlock的个人看法是：
 
-> 尽量不使用，而且它的性能不如单机版Redis，部署成本也高，还是会优先考虑使用**Redis主从+哨兵**的模式实现分布式锁。
+**尽量不使用**，而且它的性能不如单机版Redis，部署成本也高，还是会优先考虑使用**Redis主从+哨兵**的模式实现分布式锁。
 
 #### （2）如何正确使用分布式锁？
 
 1. 使用分布式锁，在上层完成**互斥**目的，虽然极端情况下锁会失效，但它可以最大程度把并发请求阻挡在最上层，减轻操作资源层的压力。
 2. 但对于要求数据绝对正确的业务，在资源层一定要做好**兜底**，设计思路可以借鉴fencing token的方案。
 
-## 数据结构:rocket:
+## 五、数据结构:rocket:
 
-参考链接：[Redis文档](https://redis.io/docs/manual/data-types/)、[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-types.html)、[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#redis-%E5%B8%B8%E8%A7%81%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84)、[博客园](https://www.cnblogs.com/ysocean/p/9080940.html)、[博客园](https://www.cnblogs.com/xrq730/p/8944539.html)
+> 参考链接：[Redis文档](https://redis.io/docs/manual/data-types/)、[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-types.html)、[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#redis-%E5%B8%B8%E8%A7%81%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84)、[博客园](https://www.cnblogs.com/ysocean/p/9080940.html)、[博客园](https://www.cnblogs.com/xrq730/p/8944539.html)
+>
 
-### 底层设计
+### 5.1 5种基础数据类型
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-types.html)、[博客园](https://www.cnblogs.com/ysocean/p/9080940.html)、[博客园](https://www.cnblogs.com/xrq730/p/8944539.html)
+
+Redis中所有的**key（键）都是字符串**，所以数据类型是指**存储值的数据类型**，主要包括常见的5种基础数据类型，分别是：String、List、Set、Zset、Hash。
+
+![5种基础数据类型](Redis.assets/datatype-basic.jpeg)
+
+|       类型       |                    存储的值                    |                           读写能力                           |
+| :--------------: | :--------------------------------------------: | :----------------------------------------------------------: |
+| String<br>字符串 |              字符串、整数或浮点数              | 对整个字符串或字符串的一部分进行操作；对整数或浮点数进行自增或自减操作 |
+|   List<br>列表   | 一个链表，链表上的**每个结点都包含一个字符串** | 对链表的两端进行`push`和`pop`操作，读取单个或多个元素；根据值查找或删除元素 |
+|   Set<br>集合    |            包含**字符串的无序集合**            | 字符串的集合，包含基础的方法有添加、获取、删除；还包含计算交集、并集、差集等 |
+|   Hash<br>散列   |           包含**键值对的无序散列表**           |              包含方法有添加、获取、删除单个元素              |
+| Zset<br>有序集合 |         和散列一样，**用于存储键值对**         | 字符串成员与浮点数分数之间的有序映射；**元素的排列顺序由分数的大小决定**；包含方法有添加、获取、删除单个元素以及根据分值范围或成员来获取元素 |
+
+#### String 字符串
+
+String是Redis中最基本的数据类型。
+
+String类型是**二进制安全**的，意思是Redis的String可以包含任何数据，如数字、字符串、jpg图片或者序列化的对象。
+
+##### 图例
+
+![String 图例](Redis.assets/datatype-string.png)
+
+##### 命令
+
+> 参考链接：[博客园](https://www.cnblogs.com/xrq730/p/8944539.html)、[博客园](https://www.cnblogs.com/ysocean/p/9080940.html)
+
+| 命令    |                          用法                          |                             描述                             |
+| ------- | :----------------------------------------------------: | :----------------------------------------------------------: |
+| `SET`   | `SET key value [EX seconds] [PX milliseconds] [NX|XX]` | （1）将Value关联到Key<br />（2）Key已关联则**覆盖，无视类型**。如果原生Key带有生存时间TTL，那么TTL会被清除 |
+| `GET`   |                       `GET key`                        | （1）返回Key关联的字符串值。如果Key不存在返回`(nil)`<br />（2）如果Key存储的不是字符串，返回错误，因为**`GET`只用于处理字符串** |
+| `MSET`  |            `MSET key value [key value ...]`            | （1）同时设置一个或多个Key-Value键值对。如果某个Key已经存在，那么MSET新值会覆盖旧值<br />（2）如果不希望对某个值覆盖，可以**使用`MSETNX`命令，所有Key都不存在才会进行覆盖**<br />（3）**`MSET`是一个原子性操作**，所有Key都会在同一时间被设置 |
+| `MGET`  |                  `MGET key [key ...]`                  | （1）返回**一个或多个给定Key对应的Value**。如果某个Key不存在，那么这个Key返回`(nil)` |
+| `SETEX` |               `SETEX key seconds value`                | （1）将Value关联到Key，设置Key过期时间为seconds（秒），**如果Key已存在则覆盖（包括值和过期时间）**<br />（2）`SET`也可以设置过期时间，但是**`SETNX`是一个原子操作**，即关联值与设置过期时间同一时间完成 |
+| `SETNX` |                   `SETNX key value`                    | （1）将Key的值设置为Value，**当且仅当Key不存在的时候**。如果Key已存在，不执行任何操作 |
+
+补充：
+
+- `MSET`和`MGET`这种**批量处理命令**能够极大提高操作效率。因为**n个命令执行耗时=n次网络传输时间+n次命令执行时间**，而批量处理命令会将**n次网络传输时间缩减为1次**，也就是**1次网络传输时间+n次命令处理时间**。但是需要注意：Redis是单线程的，如果一次批量处理命令过多，会造成Redis阻塞或网络拥塞（传输数据量大）。
+
+上面是String类型的基本命令，下面是自增自减操作。在实际工作中还是特别有用的（例如：分布式环境中统计系统的在线人数、利用Redis的高性能读写在Redis中完成秒杀而不是直接操作数据库）。
+
+|   命令   |          用法          |                             描述                             |
+| :------: | :--------------------: | :----------------------------------------------------------: |
+|  `INCR`  |       `INCR key`       | （1）Key中存储的数字值+1，返回增加后的值<br />（2）如果**Key不存在，那么Key的值被初始化为"0"再+1**<br />（3）如果**值包含错误类型或者字符串不能被表示为数字，返回错误**<br />（4）值限制在64位有符号数字表示之内 |
+|  `DECR`  |       `DECR key`       | （1）Key中存储的数字值-1，返回减少后的值<br />（2）其余同`INCR` |
+| `INCRBY` | `INCRBY key increment` | （1）Key中存储的数字值+`increment`，返回增加后的值<br />（2）其余同`INCR` |
+| `DECRBY` | `DECRBY key decrement` | （1）Key中存储的数字值-`decrement`，返回减少后的值<br />（2）其余同`INCR` |
+
+补充：
+
+- `INCR`/`DECR`在实际工作中还是非常管用的，举两个例子：
+  - 原先单机环境中统计在线人数，变成分布式部署之后可以使用`INCR`/`DECR`。
+  - 由于Redis本身极高的读写性能，一些秒杀的场景库存增减可以基于Redis来做而不是直接操作DB。
+
+**执行示例**：
+
+```bash
+127.0.0.1:6379> set hello world
+OK
+127.0.0.1:6379> get hello
+"world"
+127.0.0.1:6379> del hello
+(integer) 1
+127.0.0.1:6379> get hello
+(nil)
+127.0.0.1:6379> set counter 2
+OK
+127.0.0.1:6379> get counter
+"2"
+127.0.0.1:6379> incr counter
+(integer) 3
+127.0.0.1:6379> get counter
+"3"
+127.0.0.1:6379> incrby counter 100
+(integer) 103
+127.0.0.1:6379> get counter
+"103"
+127.0.0.1:6379> decr counter
+(integer) 102
+127.0.0.1:6379> get counter
+"102"
+```
+
+##### 使用场景
+
+1. 缓存：经典使用场景，把常用信息（字符串，图片或者视频等）放到Redis中，Redis作为缓存层，MySQL作为持久化层，可降低MySQL的读写压力。
+
+#### List 列表
+
+Redis中的List其实就是**链表（Redis使用双端链表实现List）**。
+
+使用List结构可以轻松实现**最新消息排队功能**（比如新浪微博的TimeLine）。List的另一个应用就是**消息队列**，可以利用List的`PUSH`操作，将任务存放在List中，然后工作线程再用`POP`操作将任务取出进行执行。
+
+##### 图例
+
+![List 图例](Redis.assets/datatype-list.png)
+
+##### 命令
+
+> 参考链接：[博客园](https://www.cnblogs.com/xrq730/p/8944539.html)、[博客园](https://www.cnblogs.com/ysocean/p/9080940.html)
+
+|    命令     |                  用法                  |                             描述                             |
+| :---------: | :------------------------------------: | :----------------------------------------------------------: |
+|   `LPUSH`   |     `LPUSH key value [value ...]`      | （1）将一个或多个值Value插入到**列表的表头**；如果有多个Value，那么按**从左到右的顺序依次插入表头**<br />（2）Key不存在，会**创建一个空列表**并执行`LPUSH`操作<br />（3）Key存在但不是列表类型，返回错误 |
+|  `LPUSHX`   |           `LPUSHX key value`           | （1）将值Value插入到列表的表头，**当且仅当Key存在且为一个列表时**<br />（2）Key不存在，不执行任何操作 |
+|   `LPOP`    |               `LPOP key`               |                 （1）移除并返回列表的头元素                  |
+|  `LRANGE`   |        `LRANGE key start stop`         | （1）返回列表中**指定区间内的元素**，区间以偏移量`start`和`stop`指定，二者都以0为基数<br />（2）可使用负数下标，-1表示列表最后一个元素<br />（3）**`start`大于列表最大下标，返回空列表**；**`stop`大于列表最大下标，会使得`stop`等于列表最大下标** |
+|   `LREM`    |         `LREM key count value`         | （1）根据`count`的值，移除列表中与Value相等的元素<br />（2）`count`>0表示**从头到尾**搜索，移除与Value相等的元素，数量为`count`；`count`<0表示**从尾到头**搜索，移除与Value相等的元素，数量为`count`的绝对值；count=0表示移除表中**所有**与Value相等的元素 |
+|   `LSET`    |         `LSET key index value`         | （1）将列表下标为`index`的元素值设为Value<br />（2）`index`参数超出范围，或对一个空列表进行操作时，返回错误 |
+|  `LINDEX`   |           `LINDEX key index`           |              （1）返回列表中下标为`index`的元素              |
+|  `LINSERT`  | `LINSERT key BEFORE|AFTER pivot value` | （1）将值Value插入列表中，位于`pivot`前面或者后面<br />（2）`pivot`不存在于列表中时，不执行任何操作；Key不存在，不执行任何操作 |
+|   `LLEN`    |               `LLEN key`               |           （1）返回列表的长度，如果Key不存在返回0            |
+|   `LTRIM`   |         `LTRIM key start stop`         | （1）对列表进行修剪，让列表**只返回指定区间内的元素**，不存在指定区间内的都将被移除 |
+|   `RPOP`    |               `RPOP key`               |                 （1）移除并返回列表的尾元素                  |
+| `RPOPLPUSH` |     `RPOPLPUSH source destination`     | 在一个原子时间内，执行两个动作：<br />（1）将列表`source`中**最后一个元素弹出并返回给客户端**<br />（2）将`source`**弹出的元素插入到列表`desination`作为头元素** |
+|   `RPUSH`   |     `RPUSH key value [value ...]`      |                （1）在表尾操作，其余同`LPUSH`                |
+|  `RPUSHX`   |           `RPUSHX key value`           |               （1）在表尾操作，其余同`LPUSHX`                |
+
+补充：
+
+- 使用技巧：
+  - `lpush`+`lpop`=Stack(栈)
+  - `lpush`+`rpop`=Queue（队列）
+  - `lpush`+`ltrim`=Capped Collection（有限集合）
+  - `lpush`+`brpop`（`rpop`的阻塞版本）=Message Queue（消息队列）
+
+**执行示例**：
+
+```bash
+127.0.0.1:6379> lpush mylist 1 2 ll ls mem
+(integer) 5
+127.0.0.1:6379> lrange mylist 0 -1
+1) "mem"
+2) "ls"
+3) "ll"
+4) "2"
+5) "1"
+127.0.0.1:6379> lindex mylist -1
+"1"
+127.0.0.1:6379> lindex mylist 10        # index不在 mylist 的区间范围内
+(nil)
+```
+
+##### 使用场景
+
+1. **微博TimeLine**：有人发布微博，用`lpush`加入时间轴，展示新的列表信息。
+2. **消息队列**。
+
+#### Set 集合
+
+Redis中的Set是String类型的**无序**集合。集合成员是唯一的，这就意味着集合中**不能出现重复的数据**。
+
+Redis中集合是通过**哈希表**实现的，所以添加、删除、查找的复杂度都是O(1)。
+
+##### 图例
+
+![Set 图例](Redis.assets/datatype-set.png)
+
+##### 命令
+
+|    命令     |              用法              |                             描述                             |
+| :---------: | :----------------------------: | :----------------------------------------------------------: |
+|   `SADD`    | `SADD key number [member ...]` | （1）将**一个或多个`member`元素加入到集合**中，在集合中**已存在的`member`将被忽略**<br />（2）假如集合不存在，则**创建一个只包含`member`元素的集合**<br />（3）当Key**不是集合类型时，返回错误** |
+|   `SCARD`   |          `SCARD key`           |                （1）返回集合中的**元素数量**                 |
+| `SMEMBERS`  |         `SMEMBERS key`         | （1）返回集合中的所有成员<br />（2）**不存在的集合会被视为空集** |
+| `SISMEMBER` |     `SISMEMBER key member`     |  （1）判断`member`元素是否为集合的成员，0表示不是，1表示是   |
+
+**执行示例**：
+
+```bash
+127.0.0.1:6379> sadd myset hao hao1 xiaohao hao
+(integer) 3
+127.0.0.1:6379> smembers myset
+1) "xiaohao"
+2) "hao1"
+3) "hao"
+127.0.0.1:6379> sismember myset hao
+(integer) 1
+```
+
+##### 使用场景
+
+1. **标签**：给用户添加标签，或者用户给消息添加标签，这样有同一标签或者类似标签的可以给推荐关注的事或者关注的人。
+2. **点赞，或点踩，收藏等**，可以放到set中实现。
+
+#### Hash 散列
+
+Redis中的Hash是一个**String类型的field（字段）和value（值）的映射表**，Hash特别适合用于存储对象。
+
+##### 图例
+
+![Hash 图例](Redis.assets/datatype-hash.png)
+
+##### 命令
+
+|   命令    |             用法             |                             描述                             |
+| :-------: | :--------------------------: | :----------------------------------------------------------: |
+|  `HSET`   |    `HSET key field value`    | （1）将哈希表中域`field`的值设为值Value<br />（2）**若哈希表不存在，一个新的Hash表被创建；如果`field`已经存在，覆盖旧的值** |
+|  `HGET`   |       `HGET key field`       |              （1）返回哈希表中给定域`field`的值              |
+| `HGETALL` |        `HGETALL key`         |                （1）返回哈希表中所有的域和值                 |
+|  `HDEL`   | `HDEL key filed [field ...]` | （1）删除**哈希表中一个或多个指定域**<br />（2）不存在的域将被**忽略** |
+
+**执行示例**：
+
+```bash
+127.0.0.1:6379> hset user name1 hao
+(integer) 1
+127.0.0.1:6379> hset user email1 hao@163.com
+(integer) 1
+127.0.0.1:6379> hgetall user
+1) "name1"
+2) "hao"
+3) "email1"
+4) "hao@163.com"
+127.0.0.1:6379> hget user user
+(nil)
+127.0.0.1:6379> hget user name1
+"hao"
+127.0.0.1:6379> hset user name2 xiaohao
+(integer) 1
+127.0.0.1:6379> hset user email2 xiaohao@163.com
+(integer) 1
+127.0.0.1:6379> hgetall user
+1) "name1"
+2) "hao"
+3) "email1"
+4) "hao@163.com"
+5) "name2"
+6) "xiaohao"
+7) "email2"
+8) "xiaohao@163.com"
+```
+
+##### 使用场景
+
+1. **缓存**：更直观，相比String能更节省空间地维护缓存信息，如用户信息，视频信息等。
+
+#### Zset 有序集合
+
+Redis中的Zset和Set一样也是String类型元素的集合，且**不允许出现重复成员**。不同的是每个元素都会关联一个double类型的分数。Redis正是通过分数来为集合中的成员进行**从小到大的排序**。
+
+Zset的成员是唯一的，但分数（score）却可以重复。Zset是通过两种数据结构实现的：
+
+1. **压缩列表(ziplist)**：ziplist是为了提高存储效率而设计的**一种特殊编码的双向链表**。它可以存储**字符串或者整数**，存储整数时是采用**整数的二进制**而不是字符串形式存储。它能在O(n)的时间复杂度下完成对两端的`push`和`pop`操作。但是因为每次操作都需要重新分配ziplist的内存，所以实际复杂度和ziplist的内存使用量相关。
+2. **跳跃表（zSkiplist)**：跳跃表的性能可以保证在查找、删除、添加等操作的时候在**对数期望时间内**完成，这个性能是可以和平衡树来相比较的，而且在实现方面比平衡树要优雅，这是采用跳跃表的主要原因。跳跃表的复杂度是O(log(n))。
+
+##### 图例
+
+![Zset 图例](Redis.assets/datatype-zset.png)
+
+##### 命令
+
+|   命令   |                            用法                             |                             描述                             |
+| :------: | :---------------------------------------------------------: | :----------------------------------------------------------: |
+|  `ZADD`  | `ZADD key score member [[score member] [score member] ...]` | （1）将一个或多个`member`元素及其`score`值加入Zset中<br />（2）如果`member`已经是Zset的成员，那么**更新`member`对应的`score`并重新插入`member`**保证其在正确的位置上<br />（3）`score`可以是整数值或双精度浮点数 |
+| `ZRANGE` |            `ZRANGE key start stop [WITHSCORES]`             | （1）返回Zset中指定区间内的成员，成员位置按`score`**从小到大排序**；具有相同`score`的成员按字典序排列；若需要**从大到小排列，可使用`ZREVRANGE`命令**<br />（2）下标参数`start`和`stop`都以0为底，也可以用负数；`WITHSCORES`选项可让成员和其`score`一并返回 |
+|  `ZREM`  |               `ZREM key member [member ...]`                | （1）移除Zset中的一个或多个成员，不存在的成员将被忽略<br />（2）当Key存在但不是有序集时，返回错误 |
+
+**执行示例**：
+
+```bash
+127.0.0.1:6379> zadd myscoreset 100 hao 90 xiaohao
+(integer) 2
+127.0.0.1:6379> ZRANGE myscoreset 0 -1
+1) "xiaohao"
+2) "hao"
+127.0.0.1:6379> ZSCORE myscoreset hao
+"100"
+```
+
+##### 使用场景
+
+1. **排行榜**：有序集合经典使用场景。例如小说视频等网站需要对用户上传的小说视频做排行榜，榜单可以按照用户关注数，更新时间，字数等打分，做排行。
+
+### 5.2 3种特殊数据类型:boat:
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-type-special.html)
+
+Redis除了上述5种基础数据类型外，还有3种特殊的数据类型，分别是**HyperLogLog**（基数统计），**Bitmaps** （位图）和**geospatial**（地理位置）。
+
+#### HyperLogLog（基数统计）
+
+Redis `v2.8.9`版本更新了Hyperloglog数据结构。
+
+##### 什么是基数？
+
+举个例子，A={1, 2, 3, 4, 5}，B={3, 5, 6, 7, 9}；那么基数（不重复的元素）=1, 2, 4, 6, 7, 9（允许容错，即可以接受一定误差）
+
+##### 用来解决什么问题？
+
+这个结构可以非常省内存的去**统计各种计数**，比如注册IP数、每日访问IP数、页面实时UV、在线用户数、共同好友数等。
+
+##### 它的优势体现在哪？
+
+一个大型的网站，每天IP比如有100万，粗算一个IP消耗15字节，那么100万个IP就是15M。而 HyperLogLog在Redis中每个键占用的内容都是12K，理论存储近似接近2^64个值，不管存储的内容是什么，它是一个基于基数估算的算法，能**比较准确的估算出基数，可以使用少量固定的内存去存储并识别集合中的唯一元素**。虽然这个估算的基数并不一定准确，是一个带有0.81%标准错误的近似值（但对于可以接受一定容错的业务场景，比如IP数统计、UV等，是可以忽略不计的）。
+
+##### 命令使用
+
+```bash
+127.0.0.1:6379> pfadd key1 a b c d e f g h i	# 创建第一组元素
+(integer) 1
+127.0.0.1:6379> pfcount key1					# 统计元素的基数数量
+(integer) 9
+127.0.0.1:6379> pfadd key2 c j k l m e g a		# 创建第二组元素
+(integer) 1
+127.0.0.1:6379> pfcount key2
+(integer) 8
+127.0.0.1:6379> pfmerge key3 key1 key2			# 合并两组：key1 key2 -> key3 并集
+OK
+127.0.0.1:6379> pfcount key3
+(integer) 13
+```
+
+#### Bitmap（位存储）
+
+Bitmap即位图数据结构，是操作二进制位来进行记录，只有**0和1两个状态**。
+
+##### 用来解决什么问题？
+
+统计用户信息：活跃|不活跃、 登录|未登录、 打卡|不打卡。类似这种包含**两个状态的，都可以使用 Bitmaps**。
+
+##### 命令使用
+
+1. 使用bitmap来记录周一到周日的打卡
+
+   周一：1、周二：0、周三：0、周四：1......
+
+   ```bash
+   127.0.0.1:6379> setbit sign 0 1
+   (integer) 0
+   127.0.0.1:6379> setbit sign 1 1
+   (integer) 0
+   127.0.0.1:6379> setbit sign 2 0
+   (integer) 0
+   127.0.0.1:6379> setbit sign 3 1
+   (integer) 0
+   127.0.0.1:6379> setbit sign 4 0
+   (integer) 0
+   127.0.0.1:6379> setbit sign 5 0
+   (integer) 0
+   127.0.0.1:6379> setbit sign 6 1
+   (integer) 0
+   ```
+
+2. 查看某一天是否有打卡：
+
+   ```bash
+   127.0.0.1:6379> getbit sign 3
+   (integer) 1
+   127.0.0.1:6379> getbit sign 5
+   (integer) 0
+   ```
+
+3. 统计打卡的天数：
+
+   ```bash
+   127.0.0.1:6379> bitcount sign # 统计这周的打卡记录，就可以看到是否有全勤！
+   (integer) 3
+   ```
+
+#### Geospatial（地理位置）
+
+Redis的Geo在Redis `v3.2`版本就推出了。这个功能可以推算地理位置的信息：两地之间的距离、方圆几里的人等。
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-type-special.html#geospatial-%E5%9C%B0%E7%90%86%E4%BD%8D%E7%BD%AE)
+>
+
+### 5.3 Redis `v5.0`新数据结构:rainbow:
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-type-stream.html)
+
+Redis的作者在`v5.0`中放出一个新的数据结构——Stream。Stream的内部其实也是一个队列，**每一个不同的key，对应的是不同的队列，每个队列的元素（也就是消息）都有一个`msgid`，并且需要保证`msgid`是严格递增的**。
+
+在Stream当中，消息是默认持久化的，即便是Redis重启，也能够读取到消息。那么，Stream是如何做到多播的呢？
+
+其实非常简单，与其他队列系统相似，Redis对不同的消费者，可以消费同一个消息；对于不同的消费组，都维护一个`Idx`下标，表示这一个消费群组消费到了哪里，每次进行消费，都会更新一下这个下标，往后面一位进行偏移。
+
+### 5.4 对象机制详解:airplane:
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-object.html)
+
+#### 引入
 
 ![Redis 底层设计](Redis.assets/datasturcture-basic.png)
 
-上图反映了Redis的每种对象其实都由**对象结构（redisObject）**与**对应编码的底层数据结构**组合而成，而每种对象类型对应若干编码方式，不同的编码方式所对应的底层数据结构是不同的。所以需要从几个角度来着手底层研究：
+上图反映了Redis的**每种对象**其实都由**对象结构（redisObject）**与**对应编码的底层数据结构**组合而成，而**每种对象类型对应若干编码方式，不同的编码方式所对应的底层数据结构是不同的**。所以需要从几个角度来着手底层研究：
 
 - **对象设计机制**：对象结构（redisObject）
 - **编码类型和底层数据结构**：对应编码的数据结构
 
-### redisObject
+#### redisObject
 
-#### 为什么需要redisObject？
+##### 为什么Redis会设计redisObject？
 
 在Redis的命令中，用于对键进行处理的命令占了很大一部分，而对于键所保存的**值类型的命令又各不相同**。如：`LPUSH`和`LLEN`只能用于列表键，而`SADD`和`SRANDMEMBER`只能用于集合键；另外一些命令，比如`DEL`、`TTL`和`TYPE`可以用于任何类型的键。
 
-要正确实现这些命令，必须为不同类型的键设置不同的处理方式，例如：删除一个列表键和删除一个字符串键的操作过程就不太一样。
+**要正确实现这些命令，必须为不同类型的键设置不同的处理方式**，例如：删除一个列表键和删除一个字符串键的操作过程就不太一样。
 
 以上的描述说明，**Redis必须让每个键都带有类型信息，使得程序可以检查键的类型，并为它选择合适的处理方式**。
 
@@ -870,12 +1259,12 @@ Redlock只有建立在**时钟正确**的前提下才能正常工作，如果可
 
 为了解决以上问题，**Redis构建了自己的类型系统**，这个系统的主要功能包括：
 
-1. redisObject对象
-2. 基于redisObject对象的类型检查
-3. 基于redisObject对象的显式多态函数
-4. 对redisObject进行分配、共享和销毁的机制
+1. redisObject对象；
+2. 基于redisObject对象的类型检查；
+3. 基于redisObject对象的显式多态函数；
+4. 对redisObject进行分配、共享和销毁的机制。
 
-#### redisObject数据结构
+##### redisObject数据结构
 
 redisObject是Redis类型系统的核心，数据库中的**每个键、值以及Redis本身处理的参数**都表示为这种数据类型。
 
@@ -935,9 +1324,9 @@ typedef struct redisObject {
   #define OBJ_ENCODING_STREAM 10 /* Encoded as a radix tree of listpacks */
   ```
 
-- `ptr`是一个指针，指向实际保存值的数据结构，这个数据结构由`type`和`encoding`属性决定。例如：如果一个redisObject的`type`属性为`OBJ_LIST`，`encoding`属性为`OBJ_ENCODING_QUICKLIST`，那么这个对象就是一个**列表（List)**，它的值保存在一个`QuickList`的数据结构内，而`ptr`指针就指向`QuickList`。
+- `ptr`是一个指针，**指向实际保存值的数据结构**，这个数据结构由`type`和`encoding`属性决定。例如：如果一个redisObject的`type`属性为`OBJ_LIST`，`encoding`属性为`OBJ_ENCODING_QUICKLIST`，那么这个对象就是一个**列表（List)**，它的值保存在一个`QuickList`的数据结构内，而`ptr`指针就指向`QuickList`。
 
-#### 命令的类型检查和多态处理
+##### 命令的类型检查和多态处理
 
 **当执行一个处理数据类型命令的时候，Redis执行以下步骤**：
 
@@ -950,381 +1339,13 @@ typedef struct redisObject {
 
 ![LPOP命令流程图](Redis.assets/LPOP.png)
 
+#### 对象共享、引用计数及对象销毁:rainbow:
 
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-object.html#%E5%AF%B9%E8%B1%A1%E5%85%B1%E4%BA%AB)
 
-### 基础数据类型
+### 5.5 底层数据结构:airplane:
 
-Redis中所有的**key（键）都是字符串**，所以数据类型是指**存储值的数据类型**，主要包括常见的5种基础数据类型，分别是：String、List、Set、Zset、Hash。
-
-![5种基础数据类型](Redis.assets/datatype-basic.jpeg)
-
-|       类型       |                    存储的值                    |                           读写能力                           |
-| :--------------: | :--------------------------------------------: | :----------------------------------------------------------: |
-| String<br>字符串 |              字符串、整数或浮点数              | 对整个字符串或字符串的一部分进行操作；对整数或浮点数进行自增或自减操作 |
-|   List<br>列表   | 一个链表，链表上的**每个结点都包含一个字符串** | 对链表的两端进行`push`和`pop`操作，读取单个或多个元素；根据值查找或删除元素 |
-|   Set<br>集合    |            包含**字符串的无序集合**            | 字符串的集合，包含基础的方法有添加、获取、删除；还包含计算交集、并集、差集等 |
-|   Hash<br>散列   |           包含**键值对的无序散列表**           |              包含方法有添加、获取、删除单个元素              |
-| Zset<br>有序集合 |         和散列一样，**用于存储键值对**         | 字符串成员与浮点数分数之间的有序映射；**元素的排列顺序由分数的大小决定**；包含方法有添加、获取、删除单个元素以及根据分值范围或成员来获取元素 |
-
-#### String 字符串
-
-> String是Redis中最基本的数据类型
-
-String类型是**二进制安全**的，意思是Redis的String可以包含任何数据，如数字、字符串、jpg图片或者序列化的对象。
-
-##### 图例
-
-![String 图例](Redis.assets/datatype-string.png)
-
-##### 命令
-
-| 命令    |                          用法                          |                             描述                             |
-| ------- | :----------------------------------------------------: | :----------------------------------------------------------: |
-| `SET`   | `SET key value [EX seconds] [PX milliseconds] [NX|XX]` | （1）将Value关联到Key<br />（2）Key已关联则**覆盖，无视类型**。如果原生Key带有生存时间TTL，那么TTL会被清除 |
-| `GET`   |                       `GET key`                        | （1）返回Key关联的字符串值。如果Key不存在返回`(nil)`<br />（2）如果Key存储的不是字符串，返回错误，因为**`GET`只用于处理字符串** |
-| `MSET`  |            `MSET key value [key value ...]`            | （1）同时设置一个或多个Key-Value键值对。如果某个Key已经存在，那么MSET新值会覆盖旧值<br />（2）如果不希望对某个值覆盖，可以**使用`MSETNX`命令，所有Key都不存在才会进行覆盖**<br />（3）**`MSET`是一个原子性操作**，所有Key都会在同一时间被设置 |
-| `MGET`  |                  `MGET key [key ...]`                  | （1）返回**一个或多个给定Key对应的Value**。如果某个Key不存在，那么这个Key返回`(nil)` |
-| `SETEX` |               `SETEX key seconds value`                | （1）将Value关联到Key，设置Key过期时间为seconds（秒），**如果Key已存在则覆盖（包括值和过期时间）**<br />（2）`SET`也可以设置过期时间，但是**`SETNX`是一个原子操作**，即关联值与设置过期时间同一时间完成 |
-| `SETNX` |                   `SETNX key value`                    | （1）将Key的值设置为Value，**当且仅当Key不存在的时候**。如果Key已存在，不执行任何操作 |
-
-补充：
-
-- `MSET`和`MGET`这种**批量处理命令**能够极大提高操作效率。因为**n个命令执行耗时=n次网络传输时间+n次命令执行时间**，而批量处理命令会将**n次网络传输时间缩减为1次**，也就是**1次网络传输时间+n次命令处理时间**。但是需要注意：Redis是单线程的，如果一次批量处理命令过多，会造成Redis阻塞或网络拥塞（传输数据量大）。
-
-上面是String类型的基本命令，下面是自增自减操作。在实际工作中还是特别有用的（例如：分布式环境中统计系统的在线人数、利用Redis的高性能读写在Redis中完成秒杀而不是直接操作数据库）。
-
-|   命令   |          用法          |                             描述                             |
-| :------: | :--------------------: | :----------------------------------------------------------: |
-|  `INCR`  |       `INCR key`       | （1）Key中存储的数字值+1，返回增加后的值<br />（2）如果**Key不存在，那么Key的值被初始化为"0"再+1**<br />（3）如果**值包含错误类型或者字符串不能被表示为数字，返回错误**<br />（4）值限制在64位有符号数字表示之内 |
-|  `DECR`  |       `DECR key`       | （1）Key中存储的数字值-1，返回减少后的值<br />（2）其余同`INCR` |
-| `INCRBY` | `INCRBY key increment` | （1）Key中存储的数字值+`increment`，返回增加后的值<br />（2）其余同`INCR` |
-| `DECRBY` | `DECRBY key decrement` | （1）Key中存储的数字值-`decrement`，返回减少后的值<br />（2）其余同`INCR` |
-
-补充：
-
-- `INCR`/`DECR`在实际工作中还是非常管用的，举两个例子：
-  - 原先单机环境中统计在线人数，变成分布式部署之后可以使用`INCR`/`DECR`
-  - 由于Redis本身极高的读写性能，一些秒杀的场景库存增减可以基于Redis来做而不是直接操作DB。
-
-执行示例：
-
-```sh
-127.0.0.1:6379> set hello world
-OK
-127.0.0.1:6379> get hello
-"world"
-127.0.0.1:6379> del hello
-(integer) 1
-127.0.0.1:6379> get hello
-(nil)
-127.0.0.1:6379> set counter 2
-OK
-127.0.0.1:6379> get counter
-"2"
-127.0.0.1:6379> incr counter
-(integer) 3
-127.0.0.1:6379> get counter
-"3"
-127.0.0.1:6379> incrby counter 100
-(integer) 103
-127.0.0.1:6379> get counter
-"103"
-127.0.0.1:6379> decr counter
-(integer) 102
-127.0.0.1:6379> get counter
-"102"
-```
-
-##### 使用场景
-
-1. 缓存：经典使用场景，把常用信息（字符串，图片或者视频等）放到Redis中，Redis作为缓存层，MySQL作为持久化层，可降低MySQL的读写压力。
-
-#### List 列表
-
-> Redis中的List其实就是链表（Redis使用双端链表实现List）。
-
-使用List结构可以轻松实现**最新消息排队功能**（比如新浪微博的TimeLine）。List的另一个应用就是**消息队列**，可以利用List的`PUSH`操作，将任务存放在List中，然后工作线程再用`POP`操作将任务取出进行执行。
-
-##### 图例
-
-![List 图例](Redis.assets/datatype-list.png)
-
-##### 命令
-
-|    命令     |                  用法                  |                             描述                             |
-| :---------: | :------------------------------------: | :----------------------------------------------------------: |
-|   `LPUSH`   |     `LPUSH key value [value ...]`      | （1）将一个或多个值Value插入到**列表的表头**；如果有多个Value，那么按**从左到右的顺序依次插入表头**<br />（2）Key不存在，会**创建一个空列表**并执行`LPUSH`操作<br />（3）Key存在但不是列表类型，返回错误 |
-|  `LPUSHX`   |           `LPUSHX key value`           | （1）将值Value插入到列表的表头，**当且仅当Key存在且为一个列表时**<br />（2）Key不存在，不执行任何操作 |
-|   `LPOP`    |               `LPOP key`               |                 （1）移除并返回列表的头元素                  |
-|  `LRANGE`   |        `LRANGE key start stop`         | （1）返回列表中**指定区间内的元素**，区间以偏移量`start`和`stop`指定，二者都以0为基数<br />（2）可使用负数下标，-1表示列表最后一个元素<br />（3）**`start`大于列表最大下标，返回空列表**；**`stop`大于列表最大下标，会使得`stop`等于列表最大下标** |
-|   `LREM`    |         `LREM key count value`         | （1）根据`count`的值，移除列表中与Value相等的元素<br />（2）`count`>0表示**从头到尾**搜索，移除与Value相等的元素，数量为`count`；`count`<0表示**从尾到头**搜索，移除与Value相等的元素，数量为`count`的绝对值；count=0表示移除表中**所有**与Value相等的元素 |
-|   `LSET`    |         `LSET key index value`         | （1）将列表下标为`index`的元素值设为Value<br />（2）`index`参数超出范围，或对一个空列表进行操作时，返回错误 |
-|  `LINDEX`   |           `LINDEX key index`           |              （1）返回列表中下标为`index`的元素              |
-|  `LINSERT`  | `LINSERT key BEFORE|AFTER pivot value` | （1）将值Value插入列表中，位于`pivot`前面或者后面<br />（2）`pivot`不存在于列表中时，不执行任何操作；Key不存在，不执行任何操作 |
-|   `LLEN`    |               `LLEN key`               |           （1）返回列表的长度，如果Key不存在返回0            |
-|   `LTRIM`   |         `LTRIM key start stop`         | （1）对列表进行修剪，让列表**只返回指定区间内的元素**，不存在指定区间内的都将被移除 |
-|   `RPOP`    |               `RPOP key`               |                 （1）移除并返回列表的尾元素                  |
-| `RPOPLPUSH` |     `RPOPLPUSH source destination`     | 在一个原子时间内，执行两个动作：<br />（1）将列表`source`中**最后一个元素弹出并返回给客户端**<br />（2）将`source`**弹出的元素插入到列表`desination`作为头元素** |
-|   `RPUSH`   |     `RPUSH key value [value ...]`      |                （1）在表尾操作，其余同`LPUSH`                |
-|  `RPUSHX`   |           `RPUSHX key value`           |               （1）在表尾操作，其余同`LPUSHX`                |
-
-补充：
-
-- 使用技巧：
-  - `lpush`+`lpop`=Stack(栈)
-  - `lpush`+`rpop`=Queue（队列）
-  - `lpush`+`ltrim`=Capped Collection（有限集合）
-  - `lpush`+`brpop`（`rpop`的阻塞版本）=Message Queue（消息队列）
-
-执行示例：
-
-```sh
-127.0.0.1:6379> lpush mylist 1 2 ll ls mem
-(integer) 5
-127.0.0.1:6379> lrange mylist 0 -1
-1) "mem"
-2) "ls"
-3) "ll"
-4) "2"
-5) "1"
-127.0.0.1:6379> lindex mylist -1
-"1"
-127.0.0.1:6379> lindex mylist 10        # index不在 mylist 的区间范围内
-(nil)
-```
-
-##### 使用场景
-
-1. **微博TimeLine**：有人发布微博，用`lpush`加入时间轴，展示新的列表信息。
-2. **消息队列**。
-
-#### Set 集合
-
-> Redis中的Set是String类型的**无序**集合。集合成员是唯一的，这就意味着集合中**不能出现重复的数据**。
-
-Redis中集合是通过**哈希表**实现的，所以添加、删除、查找的复杂度都是O(1)。
-
-##### 图例
-
-![Set 图例](Redis.assets/datatype-set.png)
-
-##### 命令
-
-|    命令     |              用法              |                             描述                             |
-| :---------: | :----------------------------: | :----------------------------------------------------------: |
-|   `SADD`    | `SADD key number [member ...]` | （1）将**一个或多个`member`元素加入到集合**中，在集合中**已存在的`member`将被忽略**<br />（2）假如集合不存在，则**创建一个只包含`member`元素的集合**<br />（3）当Key**不是集合类型时，返回错误** |
-|   `SCARD`   |          `SCARD key`           |                （1）返回集合中的**元素数量**                 |
-| `SMEMBERS`  |         `SMEMBERS key`         | （1）返回集合中的所有成员<br />（2）**不存在的集合会被视为空集** |
-| `SISMEMBER` |     `SISMEMBER key member`     |  （1）判断`member`元素是否为集合的成员，0表示不是，1表示是   |
-
-执行示例：
-
-```sh
-127.0.0.1:6379> sadd myset hao hao1 xiaohao hao
-(integer) 3
-127.0.0.1:6379> smembers myset
-1) "xiaohao"
-2) "hao1"
-3) "hao"
-127.0.0.1:6379> sismember myset hao
-(integer) 1
-```
-
-##### 使用场景
-
-1. **标签**：给用户添加标签，或者用户给消息添加标签，这样有同一标签或者类似标签的可以给推荐关注的事或者关注的人。
-2. **点赞，或点踩，收藏等**，可以放到set中实现。
-
-#### Hash 散列
-
-> Redis中的Hash是一个String类型的field（字段）和value（值）的映射表，Hash 特别适合用于存储对象。
-
-##### 图例
-
-![Hash 图例](Redis.assets/datatype-hash.png)
-
-##### 命令
-
-|   命令    |             用法             |                             描述                             |
-| :-------: | :--------------------------: | :----------------------------------------------------------: |
-|  `HSET`   |    `HSET key field value`    | （1）将哈希表中域`field`的值设为值Value<br />（2）**若哈希表不存在，一个新的Hash表被创建；如果`field`已经存在，覆盖旧的值** |
-|  `HGET`   |       `HGET key field`       |              （1）返回哈希表中给定域`field`的值              |
-| `HGETALL` |        `HGETALL key`         |                （1）返回哈希表中所有的域和值                 |
-|  `HDEL`   | `HDEL key filed [field ...]` | （1）删除**哈希表中一个或多个指定域**<br />（2）不存在的域将被**忽略** |
-
-执行示例：
-
-```sh
-127.0.0.1:6379> hset user name1 hao
-(integer) 1
-127.0.0.1:6379> hset user email1 hao@163.com
-(integer) 1
-127.0.0.1:6379> hgetall user
-1) "name1"
-2) "hao"
-3) "email1"
-4) "hao@163.com"
-127.0.0.1:6379> hget user user
-(nil)
-127.0.0.1:6379> hget user name1
-"hao"
-127.0.0.1:6379> hset user name2 xiaohao
-(integer) 1
-127.0.0.1:6379> hset user email2 xiaohao@163.com
-(integer) 1
-127.0.0.1:6379> hgetall user
-1) "name1"
-2) "hao"
-3) "email1"
-4) "hao@163.com"
-5) "name2"
-6) "xiaohao"
-7) "email2"
-8) "xiaohao@163.com"
-```
-
-##### 使用场景
-
-1. **缓存**：更直观，相比String能更节省空间地维护缓存信息，如用户信息，视频信息等。
-
-#### Zset 有序集合
-
-> Redis中的Zset和Set一样也是String类型元素的集合，且不允许出现重复成员。不同的是每个元素都会关联一个double类型的分数。Redis正是通过分数来为集合中的成员进行**从小到大的排序**。
-
-Zset的成员是唯一的，但分数（score）却可以重复。Zset是通过两种数据结构实现的：
-
-1. **压缩列表(ziplist)**：ziplist是为了提高存储效率而设计的**一种特殊编码的双向链表**。它可以存储**字符串或者整数**，存储整数时是采用**整数的二进制**而不是字符串形式存储。它能在O(n)的时间复杂度下完成对两端的`push`和`pop`操作。但是因为每次操作都需要重新分配ziplist的内存，所以实际复杂度和ziplist的内存使用量相关。
-2. **跳跃表（zSkiplist)**：跳跃表的性能可以保证在查找、删除、添加等操作的时候在**对数期望时间内**完成，这个性能是可以和平衡树来相比较的，而且在实现方面比平衡树要优雅，这是采用跳跃表的主要原因。跳跃表的复杂度是O(log(n))。
-
-##### 图例
-
-![Zset 图例](Redis.assets/datatype-zset.png)
-
-##### 命令
-
-|   命令   |                            用法                             |                             描述                             |
-| :------: | :---------------------------------------------------------: | :----------------------------------------------------------: |
-|  `ZADD`  | `ZADD key score member [[score member] [score member] ...]` | （1）将一个或多个`member`元素及其`score`值加入Zset中<br />（2）如果`member`已经是Zset的成员，那么**更新`member`对应的`score`并重新插入`member`**保证其在正确的位置上<br />（3）`score`可以是整数值或双精度浮点数 |
-| `ZRANGE` |            `ZRANGE key start stop [WITHSCORES]`             | （1）返回Zset中指定区间内的成员，成员位置按`score`**从小到大排序**；具有相同`score`的成员按字典序排列；若需要**从大到小排列，可使用`ZREVRANGE`命令**<br />（2）下标参数`start`和`stop`都以0为底，也可以用负数；`WITHSCORES`选项可让成员和其`score`一并返回 |
-|  `ZREM`  |               `ZREM key member [member ...]`                | （1）移除Zset中的一个或多个成员，不存在的成员将被忽略<br />（2）当Key存在但不是有序集时，返回错误 |
-
-执行示例：
-
-```sh
-127.0.0.1:6379> zadd myscoreset 100 hao 90 xiaohao
-(integer) 2
-127.0.0.1:6379> ZRANGE myscoreset 0 -1
-1) "xiaohao"
-2) "hao"
-127.0.0.1:6379> ZSCORE myscoreset hao
-"100"
-```
-
-##### 使用场景
-
-1. **排行榜**：有序集合经典使用场景。例如小说视频等网站需要对用户上传的小说视频做排行榜，榜单可以按照用户关注数，更新时间，字数等打分，做排行。
-
-### 特殊数据类型
-
-Redis除了上述5种基础数据类型外，还有3种特殊的数据类型，分别是**HyperLogLog**（基数统计），**Bitmaps** （位图）和**geospatial**（地理位置）。
-
-#### HyperLogLog（基数统计）
-
-> Redis `v2.8.9`版本更新了Hyperloglog数据结构。
-
-##### 什么是基数？
-
-举个例子，A={1, 2, 3, 4, 5}，B={3, 5, 6, 7, 9}；那么基数（不重复的元素）=1, 2, 4, 6, 7, 9（允许容错，即可以接受一定误差）
-
-##### 用来解决什么问题？
-
-这个结构可以非常省内存的去**统计各种计数**，比如注册IP数、每日访问IP数、页面实时UV、在线用户数、共同好友数等。
-
-##### 它的优势体现在哪？
-
-一个大型的网站，每天IP比如有100万，粗算一个IP消耗15字节，那么100万个IP就是15M。而 HyperLogLog在Redis中每个键占用的内容都是12K，理论存储近似接近2^64个值，不管存储的内容是什么，它是一个基于基数估算的算法，能**比较准确的估算出基数，可以使用少量固定的内存去存储并识别集合中的唯一元素**。虽然这个估算的基数并不一定准确，是一个带有0.81%标准错误的近似值（但对于可以接受一定容错的业务场景，比如IP数统计、UV等，是可以忽略不计的）。
-
-##### 命令使用
-
-```sh
-127.0.0.1:6379> pfadd key1 a b c d e f g h i	# 创建第一组元素
-(integer) 1
-127.0.0.1:6379> pfcount key1					# 统计元素的基数数量
-(integer) 9
-127.0.0.1:6379> pfadd key2 c j k l m e g a		# 创建第二组元素
-(integer) 1
-127.0.0.1:6379> pfcount key2
-(integer) 8
-127.0.0.1:6379> pfmerge key3 key1 key2			# 合并两组：key1 key2 -> key3 并集
-OK
-127.0.0.1:6379> pfcount key3
-(integer) 13
-```
-
-#### Bitmap
-
-> Bitmap即位图数据结构，是操作二进制位来进行记录，只有0和1两个状态。
-
-##### 用来解决什么问题？
-
-统计用户信息：活跃|不活跃、 登录|未登录、 打卡|不打卡。类似这种包含**两个状态的，都可以使用 Bitmaps**。
-
-##### 命令使用
-
-1. 使用bitmap来记录周一到周日的打卡
-
-   周一：1、周二：0、周三：0、周四：1......
-
-   ```sh
-   127.0.0.1:6379> setbit sign 0 1
-   (integer) 0
-   127.0.0.1:6379> setbit sign 1 1
-   (integer) 0
-   127.0.0.1:6379> setbit sign 2 0
-   (integer) 0
-   127.0.0.1:6379> setbit sign 3 1
-   (integer) 0
-   127.0.0.1:6379> setbit sign 4 0
-   (integer) 0
-   127.0.0.1:6379> setbit sign 5 0
-   (integer) 0
-   127.0.0.1:6379> setbit sign 6 1
-   (integer) 0
-   ```
-
-2. 查看某一天是否有打卡：
-
-   ```sh
-   127.0.0.1:6379> getbit sign 3
-   (integer) 1
-   127.0.0.1:6379> getbit sign 5
-   (integer) 0
-   ```
-
-3. 统计打卡的天数：
-
-   ```sh
-   127.0.0.1:6379> bitcount sign # 统计这周的打卡记录，就可以看到是否有全勤！
-   (integer) 3
-   ```
-
-#### Geospatial
-
-> Redis的Geo在Redis `v3.2`版本就推出了。这个功能可以推算地理位置的信息：两地之间的距离、方圆几里的人等
-
-详细使用参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-type-special.html#geospatial-%E5%9C%B0%E7%90%86%E4%BD%8D%E7%BD%AE)
-
-### Redis `v5.0`新数据结构
-
-Redis的作者在`v5.0`中放出一个新的数据结构——Stream。Stream的内部其实也是一个队列，**每一个不同的key，对应的是不同的队列，每个队列的元素（也就是消息）都有一个`msgid`，并且需要保证`msgid`是严格递增的**。
-
-在Stream当中，消息是默认持久化的，即便是Redis重启，也能够读取到消息。那么，Stream是如何做到多播的呢？
-
-其实非常简单，与其他队列系统相似，Redis对不同的消费者，可以消费同一个消息；对于不同的消费组，都维护一个`Idx`下标，表示这一个消费群组消费到了哪里，每次进行消费，都会更新一下这个下标，往后面一位进行偏移。
-
-详细使用参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-type-stream.html)
-
-### 底层数据结构
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html)
 
 在前面对redisObject有了初步认识之后，可以继续理解如下的底层数据结构部分：
 
@@ -1332,11 +1353,11 @@ Redis的作者在`v5.0`中放出一个新的数据结构——Stream。Stream的
 
 #### SDS 简单动态字符串
 
-> Redis是用C语言写的，但是Redis中的字符串却不是C语言中的字符串（即以空字符'\0'结尾的字符数组）。它是自己构建了一种名为**简单动态字符串（Simple Dynamic String, SDS**）的抽象类型，并将**SDS作为Redis的默认字符串表示**。
+Redis是用C语言写的，但是Redis中的字符串却不是C语言中的字符串（即以空字符'\0'结尾的字符数组）。它是自己构建了一种名为**简单动态字符串（Simple Dynamic String, SDS**）的抽象类型，并将**SDS作为Redis的默认字符串表示**。
 
 ##### SDS定义
 
-> 这是一种用于**存储二进制数据**的一种结构,，具有动态扩容的特点，其实现位于**src/sds.h**与**src/sds.c**中。
+一种用于**存储二进制数据**的一种结构，具有动态扩容的特点，其实现位于**src/sds.h**与**src/sds.c**中。
 
 SDS的总体概览如下图：
 
@@ -1371,7 +1392,7 @@ SDS的总体概览如下图：
 
 ##### 为什么使用SDS
 
-> **为什么不使用C语言字符串实现，而是使用SDS**？这样实现有什么好处？
+**为什么不使用C语言字符串实现，而是使用SDS**？这样实现有什么好处？
 
 - 常数复杂度获取字符串长度
 
@@ -1400,7 +1421,13 @@ SDS的总体概览如下图：
 
 ##### 空间预分配进一步理解
 
-参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#%E7%A9%BA%E9%97%B4%E9%A2%84%E5%88%86%E9%85%8D%E8%A1%A5%E8%BF%9B%E4%B8%80%E6%AD%A5%E7%90%86%E8%A7%A3)
+当执行追加操作时，比如给`key="Hello World"`的字符串后追加`"again!"`，则这时的`len`=18，free由0变成了18，此时的`buf='Hello World again!\0....................'`（.表示空格)，也就是`buf[]`的内存空间是18+18+1=37个字节，其中‘\0’占1个字节。Redis给字符串多分配了18个字节的预分配空间，所以下次还有append追加的时候，如果预分配空间足够，就无须再进行空间分配了。
+
+在当前版本中，**当新字符串的长度小于1M时，Redis会分配所需大小一倍的空间，当大于1M的时候，就为他们额外多分配1M的空间**。
+
+思考：**这种分配策略会浪费内存资源吗**？
+
+答：执行过`APPEND`命令的字符串会带有额外的预分配空间，这些预分配空间不会被释放，除非该字符串所对应的键被删除，或者等到关闭Redis之后，再次启动时重新载入的字符串对象将不会有预分配空间。**因为执行`APPEND`命令的字符串键数量通常并不多，占用内存的体积通常也不大，所以这一般并不算什么问题**。另一方面，如果执行`APPEND`操作的键很多，而字符串的体积又很大的话，那可能就需要修改Redis服务器，让它定时释放一些字符串键的预分配空间，从而更有效地使用内存。
 
 ##### 小结
 
@@ -1414,11 +1441,11 @@ C字符串和SDS之间的区别：
 |              只能保存文本数据              |          可以保存**文本或二进制数据**          |
 |      可以使用所有`<string.h>`库中函数      |       只可以使用部分`<string.h>`库中函数       |
 
-一般来说，SDS除了保存数据库中的字符串值以外，还可以作为缓冲区（buffer）：包括AOF模块中的AOF缓冲区以及客户端状态中的输入缓冲区。
+一般来说，SDS除了保存数据库中的字符串值以外，还可以作为缓冲区（Buffer）：包括AOF模块中的AOF缓冲区以及客户端状态中的输入缓冲区。
 
 #### ziplist 压缩列表
 
-> ziplist是为了提高存储效率而设计的一种特殊编码的**双向链表**。它可以存储字符串或者整数，**存储整数时是采用整数的二进制**而不是字符串形式存储。它能在O(1)的时间复杂度下完成list两端的`push`和`pop`操作。但是因为每次操作都需要重新分配ziplist的内存，所以实际复杂度和ziplist的内存使用量相关。
+ziplist是为了提高存储效率而设计的一种特殊编码的**双向链表**。它可以存储字符串或者整数，**存储整数时是采用整数的二进制**而不是字符串形式存储。它能在O(1)的时间复杂度下完成list两端的`push`和`pop`操作。但是因为每次操作都需要重新分配ziplist的内存，所以实际复杂度和ziplist的内存使用量相关。
 
 ##### 结构
 
@@ -1437,7 +1464,8 @@ C字符串和SDS之间的区别：
 
 ##### Entry结构
 
-参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#entry%E7%BB%93%E6%9E%84)
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#entry%E7%BB%93%E6%9E%84)
+>
 
 ##### 为什么ziplist特别省内存？
 
@@ -1452,7 +1480,7 @@ C字符串和SDS之间的区别：
 
 #### quicklist 快表
 
-> quicklist这个结构是Redis在`v3.2`版本后新加的，之前的版本是list（即linkedlist），用于String数据类型中。
+quicklist这个结构是Redis在`v3.2`版本后新加的，之前的版本是list（即linkedlist），用于String数据类型中。
 
 它是一种以**ziplist为结点的双端链表**结构。宏观上，quicklist是一个链表；微观上，链表中的每个结点都是一个ziplist。
 
@@ -1561,11 +1589,12 @@ typedef struct quicklistEntry {
 
 ##### 更多额外信息
 
-参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#quicklist%E6%9B%B4%E5%A4%9A%E9%A2%9D%E5%A4%96%E4%BF%A1%E6%81%AF)
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#quicklist%E6%9B%B4%E5%A4%9A%E9%A2%9D%E5%A4%96%E4%BF%A1%E6%81%AF)
+>
 
 #### dict 字典/哈希表
 
-> 本质上就是哈希表，这个在很多语言中都有，对于开发人员人员来说比较熟悉，这里就简单介绍下。
+本质上就是哈希表，这个在很多语言中都有，对于开发人员人员来说比较熟悉，这里就简单介绍下。
 
 ##### 结构
 
@@ -1614,11 +1643,12 @@ typedef struct dictEntry{
 
 ##### 一些要点
 
-参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#%E4%B8%80%E4%BA%9B%E8%A6%81%E7%82%B9)
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#%E4%B8%80%E4%BA%9B%E8%A6%81%E7%82%B9)
+>
 
 #### intset 整数集
 
-> intset是集合类型的底层实现之一，当一个集合只包含整数值元素，并且这个集合的元素数量不多时，Redis就会使用整数集合作为集合键的底层实现。
+intset是集合类型的底层实现之一，**当一个集合只包含整数值元素，并且这个集合的元素数量不多时，Redis就会使用整数集合作为集合键的底层实现**。
 
 ##### 结构
 
@@ -1652,7 +1682,7 @@ typedef struct intset {
 
 **那如果删除掉刚加入的int32类型时，会不会做一个降级操作呢**？不会。主要还是减少开销的权衡。
 
-#### zskiplist 跳表
+#### (z)skiplist 跳表
 
 对于一个单链表来讲，即便链表中存储的数据是有序的，如果我们要想在其中查找某个数据，也只能从头到尾遍历链表。这样查找效率就会很低，时间复杂度是O(n)。比如查找12需要7次查找：
 
@@ -1689,7 +1719,7 @@ typedef struct zskiplist {
 
 ![zskiplist 内存布局图](Redis.assets/db-redis-ds-x-11.png)
 
-**zskiplist的核心设计要点**：
+**skiplist的核心设计要点**：
 
 - **头结点**不持有任何数据，且其`level[]`的长度为32。
 - 每个结点：
@@ -1702,15 +1732,16 @@ typedef struct zskiplist {
 
 ##### 为什么不用平衡树或者哈希表？
 
-参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%94%A8%E5%B9%B3%E8%A1%A1%E6%A0%91%E6%88%96%E8%80%85%E5%93%88%E5%B8%8C%E8%A1%A8)
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%94%A8%E5%B9%B3%E8%A1%A1%E6%A0%91%E6%88%96%E8%80%85%E5%93%88%E5%B8%8C%E8%A1%A8)
+>
 
-### Redis对象与编码（底层结构）对应关系
+### 5.6 Redis对象与编码（底层结构）对应关系:airplane:
 
 ![Redis 底层设计](Redis.assets/db-redis-object-2-4.png)
 
 #### 字符串对象
 
-> 字符串是Redis最基本的数据类型，不仅所有Key都是字符串类型，其它几种数据类型构成的元素也是字符串。注意字符串的长度不能超过**512M**。
+字符串是Redis最基本的数据类型，不仅所有Key都是字符串类型，其它几种数据类型构成的元素也是字符串。注意字符串的长度不能超过**512M**。
 
 ##### 编码
 
@@ -1736,7 +1767,7 @@ typedef struct zskiplist {
 
 #### 列表对象
 
-> List列表是简单的字符串列表，按照插入顺序排序，可以添加一个元素到列表的头部（左边）或者尾部（右边），它的底层实际上是个链表结构。
+List列表是简单的字符串列表，按照插入顺序排序，可以添加一个元素到列表的头部（左边）或者尾部（右边），它的底层实际上是个链表结构。
 
 ##### 编码
 
@@ -1748,11 +1779,11 @@ typedef struct zskiplist {
 
 #### 哈希对象
 
-> 哈希对象的键是一个字符串类型，值是一个键值对集合。
+哈希对象的键是一个字符串类型，值是一个键值对集合。
 
 ##### 编码
 
-哈希对象的编码可以是ziplist或者hashtable，对应的底层实现有两种：一种是ziplist，一种是dict。两种编码**内存布局**分别如下：
+哈希对象的编码可以是**ziplist**或者**hashtable**，对应的底层实现有两种：一种是ziplist，一种是dict。两种编码**内存布局**分别如下：
 
 ![哈希对象两种编码的内存布局](Redis.assets/db-redis-ds-x-23.png)
 
@@ -1774,24 +1805,24 @@ hset profile career "Programmer"
 
 ![hashtable 存储](Redis.assets/db-redis-x-object-10.png)
 
-hashtable编码的哈希表对象底层使用字典数据结构，哈希对象中的每个键值对都使用一个字典键值对。
+**hashtable编码的哈希表对象底层使用字典数据结构**，哈希对象中的每个键值对都使用一个字典键值对。
 
 ##### 编码转换
 
-和上面列表对象使用ziplist编码一样，当同时满足下面两个条件时，使用ziplist（压缩列表）编码
+和上面列表对象使用ziplist编码一样，当**同时满足下面两个条件时，使用ziplist（压缩列表）编码**：
 
-1. 列表保存元素个数小于512个
-2. 每个元素长度小于64字节
+1. 列表保存元素个数小于512个；
+2. 每个元素长度小于64字节。
 
 不能满足这两个条件的时候使用hashtable编码。以上两个条件也可以通过Redis配置文件`zset-max-ziplist-entries` 选项和 `zset-max-ziplist-value` 进行修改。
 
 #### 集合对象
 
-> 集合对象Set是String类型（整数也会转换成String类型进行存储）的无序集合。注意集合和列表的区别：集合中的元素是无序的，因此不能通过索引来操作元素；集合中的元素不能有重复。
+集合对象Set是String类型（整数也会转换成String类型进行存储）的无序集合。注意集合和列表的区别：**集合中的元素是无序的，因此不能通过索引来操作元素；集合中的元素不能有重复。**
 
 ##### 编码
 
-集合对象的编码可以是intset或者hashtable；底层实现有两种，分别是intset和dict。显然当使用intset作为底层实现的数据结构时，集合中存储的只能是数值数据且必须是整数；而当使用dict作为集合对象的底层实现时，是将数据全部存储于dict的键中，值字段闲置不用。
+集合对象的编码可以是**intset**或者**hashtable**；底层实现有两种，分别是**intset**和**dict**。显然当使用intset作为底层实现的数据结构时，集合中存储的只能是数值数据且必须是整数；而当使用dict作为集合对象的底层实现时，是将数据全部存储于dict的键中，值字段闲置不用。
 
 集合对象的内存布局如下：
 
@@ -1813,20 +1844,20 @@ SADD Dfruits "apple" "banana" "cherry"
 
 ##### 编码转换
 
-当集合同时满足以下两个条件时使用intset编码：
+当集合**同时满足以下两个条件时使用intset编码**：
 
-1. 集合对象中所有元素都是整数
-2. 集合对象所有元素数量不超过512
+1. 集合对象中所有元素都是整数；
+2. 集合对象所有元素数量不超过512。
 
 不能满足这两个条件的就使用hashtable编码。第二个条件可以通过配置文件的 `set-max-intset-entries` 进行配置。
 
 #### 有序集合对象
 
-> 和上面的集合对象相比，有序集合对象是有序的。与列表使用索引下标作为排序依据不同，有序集合为每个元素设置一个分数（score）作为排序依据。
+和上面的集合对象相比，有序集合对象是**有序**的。与列表使用索引下标作为排序依据不同，有序集合为每个元素设置一个分数（score）作为排序依据。
 
 ##### 编码
 
-有序集合的底层实现依然有两种，一种是使用ziplist作为底层实现，另外一种比较特殊，底层使用了两种数据结构：dict与skiplist。前者对应的编码值宏为ZIPLIST，后者对应的编码值宏为SKIPLIST。
+有序集合的底层实现依然有两种，一种是使用**ziplist**作为底层实现，另外一种比较特殊，底层使用了两种数据结构：**dict与skiplist**。前者对应的编码值宏为ZIPLIST，后者对应的编码值宏为SKIPLIST。
 
 **使用ziplist来实现在序集合很容易理解**，只需要在ziplist这个数据结构的基础上做好排序与去重就可以了。**使用zskiplist来实现有序集合也很容易理解**，Redis中实现的这个跳跃表似乎天然就是为了实现有序集合对象而实现的，那么为什么还要辅助一个dict实例呢? 先看来有序集合对象在这两种编码方式下的内存布局，然后再做解释。
 
@@ -1852,22 +1883,16 @@ ZADD price 8.5 apple 5.0 banana 6.0 cherry
 
 ##### 编码转换
 
-当有序集合对象同时满足以下两个条件时，对象使用ziplist编码：
+当有序集合对象**同时满足以下两个条件时，对象使用ziplist编码**：
 
-1. 保存的元素数量小于128。
+1. 保存的元素数量小于128；
 2. 保存的所有元素长度都小于64字节。
 
 不能满足上面两个条件的使用skiplist编码。以上两个条件也可以通过Redis配置文件`zset-max-ziplist-entries` 选项和 `zset-max-ziplist-value` 进行修改。
 
-### 总结
+### 总结（自己）:rocket:
 
-
-
-
-
-
-
-
+![Redis 数据类型和底层数据结构对应关系](Redis.assets/Redis datatype-datastruc.png)
 
 ## 缓存问题
 
