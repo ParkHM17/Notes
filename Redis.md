@@ -1759,6 +1759,10 @@ typedef struct zskiplist {
 
 ![三种编码方式的内存布局](Redis.assets/db-redis-ds-x-21.png)
 
+`raw`和`embstr`的区别：
+
+`embstr`与`raw`都使用redisObject和sds保存数据，区别在于：`embstr`的使用只分配一次内存空间（redisObject和sds是连续的），而`raw`需要分配两次内存空间（分别为redisObject和sds分配空间）。因此与`raw`相比，`embstr`的好处在于创建时少分配一次空间，删除时少释放一次空间，以及对象的所有数据连在一起，寻找方便。而`embstr`的坏处也很明显，如果字符串的长度增加需要重新分配内存时，整个redisObject和sds都需要重新分配空间，因此Redis中的`embstr`实现为**只读**。
+
 ##### 编码转换
 
 > 参考链接：[知乎](https://zhuanlan.zhihu.com/p/340939326)
