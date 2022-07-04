@@ -359,3 +359,387 @@ public class Student {
 
 ### 4.4 深拷贝和浅拷贝区别？什么是引用拷贝？
 
+- **浅拷贝**：浅拷贝会在堆上创建一个新的对象（区别于引用拷贝的一点），不过，**如果原对象内部的属性是引用类型的话，浅拷贝会直接复制内部对象的引用地址**，也就是说拷贝对象和原对象**共用**同一个内部对象。
+- **深拷贝**：深拷贝会**完全复制**整个对象，包括这个对象所包含的内部对象。
+
+**那什么是引用拷贝呢**？简单来说，引用拷贝就是两个不同的引用指向同一个对象。
+
+![深拷贝、浅拷贝和引用拷贝](Java SE.assets/shallow&deep-copy.8d5a2e45.png)
+
+## 五、Java常用类
+
+> 参考链接：[JavaGuide]([Java基础常见知识&面试题总结(中) | JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-02.html#java-常见类))
+
+### 5.1 Object:rocket:
+
+#### Object类常用方法
+
+```java
+/**
+ * native 方法，用于返回当前运行时对象的 Class 对象，使用了 final 关键字修饰，故不允许子类重写。
+ */
+public final native Class<?> getClass()
+/**
+ * native 方法，用于返回对象的哈希码，主要使用在哈希表中，比如 JDK 中的HashMap。
+ */
+public native int hashCode()
+/**
+ * 用于比较 2 个对象的内存地址是否相等，String 类对该方法进行了重写以用于比较字符串的值是否相等。
+ */
+public boolean equals(Object obj)
+/**
+ * naitive 方法，用于创建并返回当前对象的一份拷贝。
+ */
+protected native Object clone() throws CloneNotSupportedException
+/**
+ * 返回类的名字实例的哈希码的 16 进制的字符串。建议 Object 所有的子类都重写这个方法。
+ */
+public String toString()
+/**
+ * native 方法，并且不能重写。唤醒一个在此对象监视器上等待的线程(监视器相当于就是锁的概念)。如果有多个线程在等待只会任意唤醒一个。
+ */
+public final native void notify()
+/**
+ * native 方法，并且不能重写。跟 notify 一样，唯一的区别就是会唤醒在此对象监视器上等待的所有线程，而不是一个线程。
+ */
+public final native void notifyAll()
+/**
+ * native方法，并且不能重写。暂停线程的执行。注意：sleep 方法没有释放锁，而 wait 方法释放了锁 ，timeout 是等待时间。
+ */
+public final native void wait(long timeout) throws InterruptedException
+/**
+ * 多了 nanos 参数，这个参数表示额外时间（以毫微秒为单位，范围是 0-999999）。 所以超时的时间还需要加上 nanos 毫秒。。
+ */
+public final void wait(long timeout, int nanos) throws InterruptedException
+/**
+ * 跟之前的2个wait方法一样，只不过该方法一直等待，没有超时时间这个概念
+ */
+public final void wait() throws InterruptedException
+/**
+ * 实例被垃圾回收器回收的时候触发的操作
+ */
+protected void finalize() throws Throwable { }
+```
+
+#### `==`和`equals()`的区别
+
+**`==`**对于基本类型和引用类型的作用效果是不同的：
+
+- 对于基本数据类型来说，`==`比较的是**值**。
+- 对于引用数据类型来说，`==`比较的是对象的**内存地址**。
+
+注意：因为Java只有值传递，所以对于`==`来说，不管是比较基本数据类型，还是引用数据类型的变量，其本质比较的都是值，只是**引用类型变量存的值是对象的地址**。
+
+**`equals()`**不能用于判断基本数据类型的变量，只能用来判断两个对象是否相等。`equals()`方法存在于`Object`类中，而`Object`类是所有类的直接或间接父类，因此所有的类都有`equals()`方法。
+
+```java
+public boolean equals(Object obj) {
+     return (this == obj);
+}
+```
+
+`equals()`方法存在两种使用情况：
+
+- **类没有重写`equals()`方法**：通过`equals()`比较该类的两个对象时，使用的是`Object`类`equals()`方法，等价于通过`==`比较这两个对象。
+- **类重写了`equals()`方法**：一般会重写`equals()`方法来比较两个对象中的**属性是否相等**；若它们的属性相等，则认为这两个对象相等。
+
+举例说明：
+
+```java
+String a = new String("ab"); // a 为一个引用
+String b = new String("ab"); // b为另一个引用,对象的内容一样
+String aa = "ab"; // 放在常量池中
+String bb = "ab"; // 从常量池中查找
+System.out.println(aa == bb);// true
+System.out.println(a == b);// false
+System.out.println(a.equals(b));// true
+System.out.println(42 == 42.0);// true
+```
+
+当创建`String`类型的对象时，虚拟机会**在常量池中查找有没有已经存在的值和要创建的值相同的对象**，如果有就把它赋给当前引用，如果没有就在常量池中重新**创建**一个新的`String`对象。
+
+`String`中的`equals()`方法是被重写过的，`Object`的`equals()`方法比较对象的内存地址，而`String`的`equals()`方法比较对象的值。
+
+`String`类`equals()`方法：
+
+```java
+public boolean equals(Object anObject) {
+    if (this == anObject) {
+        return true;
+    }
+    if (anObject instanceof String) {
+        String anotherString = (String)anObject;
+        int n = value.length;
+        if (n == anotherString.value.length) {
+            char v1[] = value;
+            char v2[] = anotherString.value;
+            int i = 0;
+            while (n-- != 0) {
+                if (v1[i] != v2[i])
+                    return false;
+                i++;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+```
+
+#### `hashCode()`有什么用？
+
+`hashCode()`的作用是**获取哈希码**（`int`整数），也称为散列码。这个哈希码的作用是**确定该对象在哈希表中的索引位置**。`hashCode()`定义在`Object` 类中，这就意味着Java中的任何类都包含有`hashCode()`方法。另外需要注意的是：`Object`的`hashCode()`方法是本地方法，也就是**用C语言或C++实现的**，该方法通常用来**将对象的内存地址转换为整数**之后返回。
+
+散列表存储的是键值对，它的特点是：**能根据“键”快速检索出对应的“值”**。
+
+#### 为什么要有`hashCode()`？
+
+以HashSet如何检查重复为例子来说明为什么要有`hashCode()`。
+
+当把对象加入HashSet时，HashSet会先通过`hashCode()`计算对象的哈希码来**判断对象加入的位置**，同时也会与其他已经加入的对象的哈希码比较；如果没有相符的哈希码，**会假设对象没有重复出现**；如果发现有相同哈希码的对象，这时会调用`equals()`方法来检查相等的对象**是否真的相同**。如果两者相同，HashSet就不会让其加入；如果不同的话，就会重新散列到其他位置。这样就大大减少了`.equals()`的次数，相应地也大大提高了执行速度。
+
+从上面可以看出，`hashCode()`和`equals()`都是用于比较两个对象是否相等。**那为什么JDK还要同时提供这两个方法呢**？
+
+这是因为在一些容器（比如`HashMap`、`HashSet`）中，有了`hashCode()`之后，**判断元素是否在对应容器中的效率会更高**。**那为什么不只提供 `hashCode()` 方法呢**？这是因为**两个对象的哈希码相等并不一定代表两个对象就相等**。原因在于：因为`hashCode()`所使用的哈希算法**也许刚好会让多个对象传回相同的哈希值**，越糟糕的哈希算法越容易碰撞，但这也与数据值域分布的特性有关（所谓哈希碰撞也就是指不同的对象得到相同的哈希码 )。
+
+总结下来就是：
+
+- 如果两个对象的哈希码相等，那这两个对象不一定相等（哈希碰撞）。
+- 如果两个对象的哈希码相等并且`equals()`方法也返回 `true`，才可以认为这两个对象相等。
+- 如果两个对象的哈希码不相等，可以直接认为这两个对象不相等。
+
+#### 为什么重写`equals()`时必须重写`hashCode()`方法？
+
+因为两个相等对象的哈希码必然相等，也就是说如果`equals()`方法判断两个对象是相等的，那这两个对象的`hashCode()`值也要相等。如果只重写`equals()`却没有重写`hashCode()`，可能会导致`equals()`判断是相等的两个对象，但它们的哈希值并不相等。
+
+### 5.2 String:rocket:
+
+#### String、StringBuffer、StringBuilder的区别？
+
+##### 可变性
+
+`String`是**不可变**的。`StringBuilder`与`StringBuffer`都继承自`AbstractStringBuilder`类，在`AbstractStringBuilder`中也是**使用字符数组保存字符串**，不过没有使用`final`和`private`关键字修饰，最关键的是`AbstractStringBuilder`类还提供了很多修改字符串的方法，比如`append()`方法。
+
+```java
+abstract class AbstractStringBuilder implements Appendable, CharSequence {
+    char[] value;
+    public AbstractStringBuilder append(String str) {
+        if (str == null)
+            return appendNull();
+        int len = str.length();
+        ensureCapacityInternal(count + len);
+        str.getChars(0, len, value, count);
+        count += len;
+        return this;
+    }
+  	//...
+}
+```
+
+##### 线程安全性
+
+`String`中的对象是不可变的，也就可以理解为常量，**线程安全**。`AbstractStringBuilder`是`StringBuilder`与`StringBuffer`的公共父类，定义了一些字符串的基本操作。`StringBuffer`对方法加了同步锁或者对调用的方法加了同步锁，所以是**线程安全**的；`StringBuilder`并没有对方法进行加同步锁，所以是**非线程安全**的。
+
+##### 性能
+
+每次对`String`类型进行改变的时候，都会生成一个新的`String`对象，然后将指针指向新的`String`对象。`StringBuffer`每次都会对`StringBuffer`对象本身进行操作，而不是生成新的对象并改变对象引用。相同情况下使用`StringBuilder`相比使用`StringBuffer`仅能获得10%~15%左右的性能提升，但却要冒多线程不安全的风险。
+
+##### 总结
+
+- 操作少量的数据：使用`String`。
+- 单线程操作字符串缓冲区下操作大量数据：使用`StringBuilder`。
+- 多线程操作字符串缓冲区下操作大量数据：使用`StringBuffer`。
+
+#### String为什么不可变？
+
+`String`类中使用`final`关键字修饰字符数组来保存字符串：
+
+```java
+public final class String implements java.io.Serializable, Comparable<String>, CharSequence {
+    private final char value[];
+	//...
+}
+```
+
+被`final`关键字修饰的类不能被继承，修饰的方法不能被重写，修饰的变量是基本数据类型则值不能改变，修饰的变量是引用类型则不能再指向其他对象。因此，`final`关键字修饰的数组保存字符串并不是`String`不可变的根本原因，因为这个数组保存的字符串是可变的（`final`修饰引用类型变量的情况）。
+
+`String`真正不可变的原因：
+
+- 保存字符串的数组被`final`修饰且为私有的，并且`String`类没有提供/暴露修改这个字符串的方法。
+- `String`类被`final`修饰导致其不能被继承，进而避免了子类破坏`String`不可变。
+
+#### 字符串拼接使用`+`还是StringBuilder？
+
+Java语言本身并不支持运算符重载，`+`和`+=`是专门为String类重载过的运算符，也是Java中仅有的两个重载过的元素符。
+
+```java
+String str1 = "he";
+String str2 = "llo";
+String str3 = "world";
+String str4 = str1 + str2 + str3;
+```
+
+上面代码对应的字节码如下：
+
+![字节码文件](Java SE.assets/image-20220422161637929.png)
+
+可以看出，字符串对象使用`+`的拼接方式，实际上是通过`StringBuilder`调用`append()`方法实现的，拼接完成之后调用`toString()`得到一个`String`对象 。不过，在循环内使用`+`进行字符串拼接的话，存在比较明显的缺陷：**编译器不会创建单个`StringBuilder`以复用，会导致创建过多的`StringBuilder`对象**。
+
+```java
+String[] arr = {"he", "llo", "world"};
+String s = "";
+for (int i = 0; i < arr.length; i++) {
+    s += arr[i];
+}
+System.out.println(s);
+```
+
+![循环中使用"+"拼接字符串](Java SE.assets/image-20220422161320823.png)
+
+#### 字符串常量池的作用？
+
+**字符串常量池**是JVM为了**提升性能和减少内存**消耗针对字符串（String 类）专门开辟的一块区域，主要目的是为了避免字符串的重复创建。
+
+```java
+// 在堆中创建字符串对象”ab“
+// 将字符串对象”ab“的引用保存在字符串常量池中
+String aa = "ab";
+// 直接返回字符串常量池中字符串对象”ab“的引用
+String bb = "ab";
+System.out.println(aa==bb);// true
+```
+
+#### `intern()`方法的作用？
+
+`String.intern()`是一个`native`方法，其作用是**将指定的字符串对象的引用保存在字符串常量池中**，可以简单分为两种情况：
+
+- 如果字符串常量池中保存了对应的字符串对象的引用，就直接返回该引用。
+- 如果字符串常量池中没有保存对应的字符串对象的引用，那就在常量池中创建一个指向该字符串对象的引用并返回。
+
+```java
+// 在堆中创建字符串对象”Java“
+// 将字符串对象”Java“的引用保存在字符串常量池中
+String s1 = "Java";
+// 直接返回字符串常量池中字符串对象”Java“对应的引用
+String s2 = s1.intern();
+// 会在堆中在单独创建一个字符串对象
+String s3 = new String("Java");
+// 直接返回字符串常量池中字符串对象”Java“对应的引用
+String s4 = s3.intern();
+// s1 和 s2 指向的是堆中的同一个对象
+System.out.println(s1 == s2); // true
+// s3 和 s4 指向的是堆中不同的对象
+System.out.println(s3 == s4); // false
+// s1 和 s4 指向的是堆中的同一个对象
+System.out.println(s1 == s4); //true
+```
+
+#### String类型的变量和常量做`+`运算时发生了什么？
+
+先来看字符串不加`final`关键字拼接的情况：
+
+```java
+String str1 = "str";
+String str2 = "ing";
+// 常量池中的对象
+String str3 = "str" + "ing";
+// 堆中的新对象
+String str4 = str1 + str2;
+// 常量池中的对象
+String str5 = "string";
+System.out.println(str3 == str4);//false
+System.out.println(str3 == str5);//true
+System.out.println(str4 == str5);//false
+```
+
+对于编译期可以确定值的字符串，**也就是常量字符串** ，JVM会将其存入字符串常量池。并且，**字符串常量拼接得到的字符串常量在编译阶段就已经被存放字符串常量池**，这个得益于编译器的优化。
+
+在编译过程中，Javac编译器（下文中统称为编译器）会进行一个叫做**常量折叠（Constant Folding）**的代码优化。常量折叠会把**常量表达式的值求出来作为常量嵌在最终生成的代码中**，这是编译器会对源代码做的极少量优化措施之一（代码优化几乎都在即时编译器JIT中进行）。
+
+对于`String str3 = "str" + "ing";`，编译器会优化为`String str3 = "string";` 。但并不是所有的常量都会进行折叠，**只有编译器在程序编译期就可以确定值的常量才可以**：
+
+- 基本数据类型（`byte`、`boolean`、`short`、`char`、`int`、`float`、`long`、`double`）以及字符串常量。
+- `final`修饰的基本数据类型和字符串变量。
+- 字符串通过`+`拼接得到的字符串、基本数据类型之间算数运算（加减乘除）、基本数据类型的位运算（`<<`、`>>`、`>>>`）。
+
+**引用的值在程序编译期是无法确定的，编译器无法对其进行优化。**
+
+不过，字符串使用`final`关键字声明之后，可以让编译器当做常量来处理。因为编译器在程序编译期就可以确定它的值，其效果就相当于访问常量。
+
+```java
+final String str1 = "str";
+final String str2 = "ing";
+// 下面两个表达式其实是等价的
+String c = "str" + "ing";// 常量池中的对象
+String d = str1 + str2; // 常量池中的对象
+System.out.println(c == d);// true
+```
+
+## 六、异常
+
+> 参考链接：[JavaGuide]([Java基础知识&面试题总结(下) | JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#异常))
+
+Java异常类层次结构图：
+
+![异常类层次结构](Java SE.assets/types-of-exceptions-in-java.75041da9.png)
+
+### 6.1 `Exception`和`Error`有什么区别？
+
+在Java中，所有异常都有一个共同的祖先，即`java.lang`包中的`Throwable`类，它有两个重要的子类：
+
+- **`Exception`**：程序本身可以处理的异常，可以通过`catch`来进行捕获。`Exception`又可以分为Checked Exception（受检查异常，必须处理）和Unchecked Exception（不受检查异常，可以不处理）。
+- **`Error`**：`Error`属于程序无法处理的错误 ，不建议通过`catch`捕获 。例如Java虚拟机运行错误`Virtual MachineError`、虚拟机内存不够错误`OutOfMemoryError`、类定义错误`NoClassDefFoundError`等 。这些异常发生时，JVM一般会选择终止线程。
+
+### 6.2 Checked Exception和Unchecked Exception的区别？
+
+**Checked Exception**即受检查异常，Java代码在编译过程中，如果受检查异常没有被`catch`或者`throws`关键字处理的话，就无法通过编译。
+
+**Unchecked Exception**即不受检查异常，Java代码在编译过程中，即使不处理不受检查异常也可以正常通过编译。`RuntimeException`及其子类都统称为非受检查异常，常见的有：
+
+- `NullPointerException`：空指针异常。
+- `IllegalArgumentException`：参数异常，比如方法入参类型不对应。
+- `NumberFormatException`：字符串转换为数字格式异常，属于`IllegalArgumentException`的子类。
+- `ArrayIndexOutOfBoundsException`：数组越界异常。
+- `ClassCastException`：类型转换异常。
+- `ArithmeticException`：算术异常。
+- `SecurityException`：安全异常，例如权限不够。
+- `UnsupportedOperationException`：不支持的操作异常，例如重复创建同一用户。
+
+### 6.3 `Throwable`类常用方法
+
+- `String getMessage()`：返回异常发生时的简要描述。
+- `String toString()`：返回异常发生时的详细信息。
+- `String getLocalizedMessage()`：返回异常对象的本地化信息。使用`Throwable`的子类覆盖这个方法，可以生成本地化信息。如果子类没有覆盖该方法，则该方法返回的信息与`getMessage()`返回的结果相同。
+- `void printStackTrace()`：在控制台上打印`Throwable`对象封装的异常信息。
+
+### 6.4 `finally`块中的代码一定会被执行吗？
+
+不一定，在某些情况下，`finally`中的代码不会被执行，例如在`finally`之前虚拟机被终止运行的话，块中的代码就不会被执行。
+
+```java
+try {
+    System.out.println("Try to do something");
+    throw new RuntimeException("RuntimeException");
+} catch (Exception e) {
+    System.out.println("Catch Exception -> " + e.getMessage());
+    // 终止当前正在运行的Java虚拟机
+    System.exit(1);
+} finally {
+    System.out.println("Finally");
+}
+
+// 输出
+// Try to do something
+// Catch Exception -> RuntimeException
+```
+
+另外，在以下2种特殊情况下，`finally`块中代码也不会被执行：
+
+- 程序所在的线程死亡。
+- 关闭CPU。
+
+## 七、泛型
+
+> 参考链接：[JavaGuide]([Java基础知识&面试题总结(下) | JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#泛型))
+
+7.1 
