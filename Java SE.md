@@ -368,7 +368,7 @@ public class Student {
 
 ## 五、Java常用类
 
-> 参考链接：[JavaGuide]([Java基础常见知识&面试题总结(中) | JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-02.html#java-常见类))
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-02.html#java-%E5%B8%B8%E8%A7%81%E7%B1%BB)
 
 ### 5.1 Object:rocket:
 
@@ -677,7 +677,7 @@ System.out.println(c == d);// true
 
 ## 六、异常
 
-> 参考链接：[JavaGuide]([Java基础知识&面试题总结(下) | JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#异常))
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#%E5%BC%82%E5%B8%B8)
 
 Java异常类层次结构图：
 
@@ -740,6 +740,96 @@ try {
 
 ## 七、泛型
 
-> 参考链接：[JavaGuide]([Java基础知识&面试题总结(下) | JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#泛型))
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#%E6%B3%9B%E5%9E%8B)
 
-7.1 
+### 7.1 什么是泛型？
+
+**Java泛型（Generics）**是JDK 5中引入的一个新特性。使用泛型参数，可以增强代码的可读性以及稳定性。编译器可以对泛型参数进行检测，并且通过泛型参数可以**指定传入的对象类型**。比如`ArrayList<Person> persons = new ArrayList<Person>()`这行代码就指明了该`ArrayList`对象只能传入`Person`对象，如果传入其他类型的对象就会报错。
+
+```java
+ArrayList<E> extends AbstractList<E>
+```
+
+并且，原生`List`返回类型是`Object`，**需要手动转换类型才能使用，使用泛型后编译器自动转换**。
+
+### 7.2 泛型的使用方式有哪几种？
+
+泛型一般有三种使用方式：**泛型类**、**泛型接口**、**泛型方法**。
+
+#### 泛型类
+
+```java
+//此处T可以随便写为任意标识，常见的如T、E、K、V等形式的参数常用于表示泛型
+//在实例化泛型类时，必须指定T的具体类型
+public class Generic<T>{
+
+    private T key;
+
+    public Generic(T key) {
+        this.key = key;
+    }
+
+    public T getKey(){
+        return key;
+    }
+}
+```
+
+如何实例化泛型类：
+
+```java
+Generic<Integer> genericInteger = new Generic<Integer>(123456);
+```
+
+#### 泛型接口
+
+```java
+public interface Generator<T> {
+    public T method();
+}
+```
+
+实现泛型接口，不指定类型：
+
+```java
+class GeneratorImpl<T> implements Generator<T>{
+    @Override
+    public T method() {
+        return null;
+    }
+}
+```
+
+实现泛型接口，指定类型：
+
+```java
+class GeneratorImpl<T> implements Generator<String>{
+    @Override
+    public String method() {
+        return "hello";
+    }
+}
+```
+
+#### 泛型方法
+
+```java
+public static <E> void printArray(E[] inputArray) {
+	for (E element: inputArray){
+    	System.out.printf("%s ", element);
+    }
+    System.out.println();
+}
+```
+
+使用：
+
+```java
+// 创建不同类型数组： Integer, Double 和 Character
+Integer[] intArray = { 1, 2, 3 };
+String[] stringArray = { "Hello", "World" };
+printArray(intArray);
+printArray(stringArray);
+```
+
+注意：`public static < E > void printArray( E[] inputArray )` 一般被称为**静态泛型方法**。泛型只是一个占位符，必须在传递类型后才能使用。类在实例化时才能真正的传递类型参数，由于静态方法的加载先于类的实例化，也就是说**类中的泛型还没有传递真正的类型参数，静态方法的加载就已经完成了**，所以**静态泛型方法是没有办法使用类上声明的泛型的**，只能使用自己声明的`<E>`。
