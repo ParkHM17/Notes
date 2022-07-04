@@ -833,3 +833,335 @@ printArray(stringArray);
 ```
 
 注意：`public static < E > void printArray( E[] inputArray )` 一般被称为**静态泛型方法**。泛型只是一个占位符，必须在传递类型后才能使用。类在实例化时才能真正的传递类型参数，由于静态方法的加载先于类的实例化，也就是说**类中的泛型还没有传递真正的类型参数，静态方法的加载就已经完成了**，所以**静态泛型方法是没有办法使用类上声明的泛型的**，只能使用自己声明的`<E>`。
+
+## 八、反射
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#%E5%8F%8D%E5%B0%84)、[JavaGuide](https://javaguide.cn/java/basis/reflection.html)
+
+### 8.1 何为反射？
+
+反射之所以被称为框架的灵魂，主要是因为它拥有**在运行时分析类以及执行类中方法的能力**。通过反射可以获取任意一个类的所有属性和方法并且加以调用。
+
+### 8.2 反射机制优缺点
+
+- **优点**：可以让代码更加灵活、为各种框架提供开箱即用的功能提供了便利。
+- **缺点**：在运行时有了分析操作类的能力，这同样也**增加了安全问题**。比如可以无视泛型参数的安全检查（泛型参数的安全检查发生在编译时）。另外，反射的性能也要稍差点，不过对于框架来说实际影响不大。
+
+### 8.3 反射的应用场景
+
+像Spring/Spring Boot、MyBatis等框架中都大量使用了反射机制。**这些框架中也大量使用了动态代理，而动态代理的实现也依赖反射。**
+
+比如下面是通过JDK实现动态代理的示例代码，其中就使用了反射类`Method`来调用指定的方法。
+
+```java
+public class DebugInvocationHandler implements InvocationHandler {
+    /**
+     * 代理类中的真实对象
+     */
+    private final Object target;
+
+    public DebugInvocationHandler(Object target) {
+        this.target = target;
+    }
+
+    public Object invoke(Object proxy, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
+        System.out.println("before method " + method.getName());
+        Object result = method.invoke(target, args);
+        System.out.println("after method " + method.getName());
+        return result;
+    }
+}
+```
+
+另外，像Java中的一大利器——**注解**的实现也用到了反射。**可以基于反射分析类，然后获取到类/属性/方法/方法的参数上的注解**。获取到注解后就可以做进一步的处理。
+
+### 8.4 反射演示
+
+#### 获取Class对象的四种方式
+
+Java提供了四种方式获取Class对象：
+
+##### 知道具体类的情况下
+
+```java
+Class alunbarClass = TargetObject.class;
+```
+
+但是一般是不知道具体类的，基本都是通过遍历包下面的类来获取Class对象，通过此方式获取Class对象不会进行初始化。
+
+##### 通过Class.forName()传入类的全路径获取
+
+```java
+Class alunbarClass1 = Class.forName("cn.javaguide.TargetObject");
+```
+
+##### 通过对象实例instance.getClass()获取
+
+```java
+TargetObject o = new TargetObject();
+Class alunbarClass2 = o.getClass();
+```
+
+##### 通过类加载器xxxClassLoader.loadClass()传入类路径获取
+
+```java
+ClassLoader.getSystemClassLoader().loadClass("cn.javaguide.TargetObject");
+```
+
+通过类加载器获取Class对象不会进行初始化，意味着不进行包括初始化等一系列步骤，静态代码块和静态对象不会得到执行。
+
+## 九、注解
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#%E6%B3%A8%E8%A7%A3)
+
+`Annotation`（注解）是Java5开始引入的新特性，可以看作是一种特殊的注释，主要用于**修饰类、方法或者变量**。注解本质是一个继承了`Annotation`的特殊接口：
+
+```java
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.SOURCE)
+public @interface Override {
+
+}
+
+public interface Override extends Annotation{
+
+}
+```
+
+注解只有**被解析之后才会生效**，常见的解析方法有两种：
+
+- **编译期直接扫描**：**编译器在编译Java代码的时候扫描对应的注解并处理**，比如某个方法使用`@Override`注解，编译器在编译的时候就会**检测当前的方法是否重写了父类对应的方法**。
+- **运行期通过反射处理**：像框架中自带的注解（比如Spring框架的`@Value`、`@Component`）都是通过反射来进行处理的。
+
+## 十、I/O
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#i-o)
+
+### 10.3 I/O流分几种？
+
+- 按照流的**流向**分，可以分为输入流和输出流。
+- 按照**操作单元**划分，可以划分为字节流和字符流。
+- 按照流的**角色**划分，可以划分为节点流和处理流。
+
+Java I/O流共涉及40多个类，都是从如下4个抽象类基类中派生出来的：
+
+- InputStream/Reader：所有的输入流的基类，前者是字节输入流，后者是字符输入流。
+- OutputStream/Writer：所有输出流的基类，前者是字节输出流，后者是字符输出流。
+
+### 10.4 有了字节流为什么还要有字符流？
+
+**不管是文件读写还是网络发送接收，信息的最小存储单元都是字节，那为什么I/O流操作要分为字节流操作和字符流操作呢**？
+
+字符流是由Java虚拟机将字节转换得到的，问题就出在**这个过程还算是非常耗时**，并且，如果不知道编码类型就很容易出现乱码问题。
+
+所以，I/O流就提供了一个直接操作字符的接口，方便平时对字符进行流操作。如果音频文件、图片等**媒体文件用字节流比较好**，如果涉及到字符的话使用字符流比较好。
+
+## 十一、值传递
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/why-there-only-value-passing-in-java.html)
+
+### 11.1 值传递/引用传递
+
+程序设计语言将实参传递给方法（或函数）的方式分为两种：
+
+- **值传递**：方法接收的是实参值的拷贝，会**创建副本**。
+- **引用传递**：方法接收的直接是实参所引用的对象在堆中的**地址**，不会创建副本，对形参的修改将影响到实参。
+
+很多程序设计语言（比如C++、 Pascal）提供了两种参数传递的方式，但是在Java中只有值传递。
+
+### 11.2 为什么Java中只有值传递？
+
+#### 传递基本类型参数
+
+```java
+public static void main(String[] args) {
+    int num1 = 10;
+    int num2 = 20;
+    swap(num1, num2);
+    System.out.println("num1 = " + num1);
+    System.out.println("num2 = " + num2);
+}
+
+public static void swap(int a, int b) {
+    int temp = a;
+    a = b;
+    b = temp;
+    System.out.println("a = " + a);
+    System.out.println("b = " + b);
+}
+
+// 输出
+// a = 20
+// b = 10
+// num1 = 10
+// num2 = 20
+```
+
+在`swap()`方法中，`a`、`b`的值进行交换并不会影响到`num1`、`num2`。因为`a`、`b`的值，只是从`num1`、`num2`复制过来的。也就是说，`a`、`b`相当于`num1`、`num2`的副本，副本的内容无论怎么修改，都不会影响到原件本身。**一个方法不能修改一个基本数据类型的参数**。
+
+#### 传递引用类型参数1
+
+```java
+public static void main(String[] args) {
+    int[] arr = { 1, 2, 3, 4, 5 };
+    System.out.println(arr[0]);
+    change(arr);
+    System.out.println(arr[0]);
+}
+
+public static void change(int[] array) {
+    // 将数组的第一个元素变为0
+    array[0] = 0;
+}
+
+// 输出
+// 1
+// 0
+```
+
+这表明Java对引用类型的参数采用的是引用传递吗？实际上，并不是的，这里传递的还是值，不过，**这个值是实参的地址罢了**。
+
+也就是说`change`方法的参数拷贝的是`arr`（实参）的地址，因此它和`arr`指向的是同一个数组对象，这也就说明了为什么方法内部对形参的修改会影响到实参。
+
+![传递引用类型参数](Java SE.assets/java-value-passing-02.56cd0601.jpg)
+
+#### 传递引用类型参数2
+
+```java
+public class Person {
+    private String name;
+   // 省略构造函数、Getter&Setter方法
+}
+
+public static void main(String[] args) {
+    Person xiaoZhang = new Person("小张");
+    Person xiaoLi = new Person("小李");
+    swap(xiaoZhang, xiaoLi);
+    System.out.println("xiaoZhang:" + xiaoZhang.getName());
+    System.out.println("xiaoLi:" + xiaoLi.getName());
+}
+
+public static void swap(Person person1, Person person2) {
+    Person temp = person1;
+    person1 = person2;
+    person2 = temp;
+    System.out.println("person1:" + person1.getName());
+    System.out.println("person2:" + person2.getName());
+}
+
+// 输出
+// person1:小李
+// person2:小张
+// xiaoZhang:小张
+// xiaoLi:小李
+```
+
+`swap`方法的参数`person1`和`person2`只是拷贝了实参`xiaoZhang`和`xiaoLi`的地址。因此，**`person1`和`person2`的互换只是拷贝的两个地址的互换，并不会影响到实参`xiaoZhang`和`xiaoLi`**。
+
+![传递引用类型参数](Java SE.assets/java-value-passing-03.7d64c8e9.png)
+
+#### 总结
+
+Java中将实参传递给方法的方式是**值传递**：
+
+- 如果参数是基本类型，传递的就是**基本类型的字面量值的拷贝，会创建副本**。
+- 如果参数是引用类型，传递的就是**所引用的对象在堆中地址值的拷贝，同样也会创建副本**。
+
+## 十二、序列化
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/serialization.html)
+
+### 12.1 什么是序列化？什么是反序列化？
+
+如果需要持久化Java对象，比如将Java对象保存在文件中，或者在网络传输Java对象，这些场景都需要用到序列化。简单来说：
+
+- **序列化**：将**数据结构或对象转换成二进制字节流**的过程。
+- **反序列化**：将**二进制字节流转换成数据结构或者对象**的过程。
+
+对于Java这种面向对象编程语言来说，序列化的都是对象（Object），也就是实例化后的类（Class），但是在C++这种半面向对象的语言中，struct（结构体）定义的是数据结构类型，而class对应的是对象类型。
+
+序列化的主要目的是**通过网络传输对象或者说是将对象存储到文件系统、数据库、内存中。**
+
+![I/O](Java SE.assets/a478c74d-2c48-40ae-9374-87aacf05188c.png)
+
+### 12.2 序列化协议对应TCP/IP4层模型的哪一层？
+
+OSI七层模型中，表示层做的事情主要就是对应用层的用户数据进行处理转换为二进制流。反过来的话，就是将二进制流转换成应用层的用户数据。
+
+![OSI七层模型](Java SE.assets/6ecb84cd-4227-4c7b-a2e8-b77054604400-20200802201216504.png)
+
+OSI七层协议模型中的应用层、表示层和会话层对应的都是TCP/IP四层模型中的应用层，所以**序列化协议属于TCP/IP协议应用层的一部分**。
+
+### 12.3 如果不想进行序列化怎么办？
+
+对于不想进行序列化的变量，使用`transient`关键字修饰。`transient`关键字的作用是：**阻止实例中那些用此关键字修饰的的变量序列化**；当对象被反序列化时，被`transient`修饰的变量值不会被持久化和恢复。
+
+关于`transient`还有几点注意：
+
+- `transient`**只能修饰变量**，不能修饰类和方法。
+- `transient`修饰的变量，在反序列化后变量值将会被置成类型的默认值。例如，如果是修饰`int`类型，那么反序列后结果就是`0`。
+- `static`变量因为不属于任何对象（Object），所以无论有没有`transient`关键字修饰，均不会被序列化。
+
+### 12.4 常见序列化协议
+
+JDK自带的序列化方式一般不会用 ，因为序列化效率低并且部分版本有安全漏洞。比较常用的序列化协议有hessian、kyro、protostuff。
+
+下面提到的都是基于二进制的序列化协议，像JSON和XML这种属于文本类序列化方式。虽然JSON和XML可读性比较好，但是性能较差，一般不会选择。
+
+#### JDK自带的序列化方式
+
+JDK自带的序列化，只需实现`java.io.Serializable`接口即可。
+
+```java
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Builder
+@ToString
+public class RpcRequest implements Serializable {
+    private static final long serialVersionUID = 1905122041950251207L;
+    private String requestId;
+    private String interfaceName;
+    private String methodName;
+    private Object[] parameters;
+    private Class<?>[] paramTypes;
+    private RpcMessageTypeEnum rpcMessageTypeEnum;
+}
+```
+
+很少或者说几乎不会直接使用这个序列化方式，主要原因有两个：
+
+- **不支持跨语言调用**：如果调用的是其他语言开发的服务的时候就不支持了。
+- **性能差**：相比于其他序列化框架**性能更低**，主要原因是序列化之后的字节数组体积较大，导致传输成本加大。
+
+#### Kyro
+
+Kryo是一个高性能的序列化/反序列化工具，由于其变长存储特性并使用了字节码生成机制，拥有较高的运行速度和较小的字节码体积。
+
+#### Protobuf
+
+Protobuf出自于Google，性能比较优秀，也支持多种语言，同时还是跨平台的。就是在使用中过于繁琐，因为需要自己定义`IDL`文件和生成对应的序列化代码。这样虽然不然灵活，但是另一方面保证了protobuf没有序列化漏洞的风险。
+
+#### ProtoStuff
+
+protostuff基于Google的protobuf，但是提供了更多的功能和更简易的用法。虽然更加易用，但是不代表ProtoStuff性能更差。
+
+#### hessian
+
+hessian是一个轻量级的,自定义描述的二进制RPC协议。hessian是一个比较老的序列化，并且同样也是跨语言的。
+
+## 十三、代理模式
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/proxy.html)
+
+### 13.1 代理模式
+
+代理模式是一种比较好理解的设计模式。简单来说就是**使用代理对象来代替对真实对象的访问**，这样就可以在不修改原目标对象的前提下，提供额外的功能操作，扩展目标对象的功能。
+
+代理模式的主要作用是**扩展目标对象的功能**，比如说在目标对象的某个方法执行前后可以增加一些自定义的操作。
+
+代理模式有静态代理和动态代理两种实现方式。
+
+### 13.2 静态代理
+
+### 13.3 动态代理
