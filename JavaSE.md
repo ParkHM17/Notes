@@ -20,7 +20,7 @@ JRE是Java运行时环境。它是运行已编译的Java程序所需的所有内
 
 **Java程序从源代码到运行的过程如下图所示**：
 
-![Java程序流程](Java SE.assets/java程序转变为机器代码的过程.3af43aee.png)
+![Java程序流程](JavaSE.assets/java程序转变为机器代码的过程.3af43aee.png)
 
 需要格外注意的是`.class->机器码`这一步。在这一步JVM类加载器首先加载字节码文件，然后通过解释器逐行解释执行，这种方式的执行速度会相对比较慢。而且，有些方法和代码块是经常需要被调用的（也就是所谓的热点代码)，所以后面引进了JIT（Just-in-time Compilation） 编译器，而JIT属于运行时编译。**当JIT编译器完成第一次编译后，其会将字节码对应的机器码保存下来，下次可以直接使用**，机器码的运行效率肯定是高于Java解释器的，这也解释了为什么经常会说**Java是编译与解释共存的语言** 。
 
@@ -31,7 +31,7 @@ JRE是Java运行时环境。它是运行已编译的Java程序所需的所有内
 - **编译型**：**编译型语言将源代码一次性翻译成可被该平台执行的机器码**。一般情况下，编译语言的执行速度比较快，开发效率比较低。常见的编译性语言有C、C++、Go、Rust等等。
 - **解释型**：**解释型语言一句一句的将代码解释（Interpret）为机器代码后再执行**。解释型语言开发效率比较快，执行速度比较慢。常见的解释性语言有Python、JavaScript、PHP等等。
 
-![编译型和解释型](Java SE.assets/编译型语言和解释型语言.9908e5e6.png)
+![编译型和解释型](JavaSE.assets/编译型语言和解释型语言.9908e5e6.png)
 
 **为什么说Java语言“编译与解释并存”**？
 
@@ -364,7 +364,7 @@ public class Student {
 
 **那什么是引用拷贝呢**？简单来说，引用拷贝就是两个不同的引用指向同一个对象。
 
-![深拷贝、浅拷贝和引用拷贝](Java SE.assets/shallow&deep-copy.8d5a2e45.png)
+![深拷贝、浅拷贝和引用拷贝](JavaSE.assets/shallow&deep-copy.8d5a2e45.png)
 
 ## 五、Java常用类
 
@@ -581,7 +581,7 @@ String str4 = str1 + str2 + str3;
 
 上面代码对应的字节码如下：
 
-![字节码文件](Java SE.assets/image-20220422161637929.png)
+![字节码文件](JavaSE.assets/image-20220422161637929.png)
 
 可以看出，字符串对象使用`+`的拼接方式，实际上是通过`StringBuilder`调用`append()`方法实现的，拼接完成之后调用`toString()`得到一个`String`对象 。不过，在循环内使用`+`进行字符串拼接的话，存在比较明显的缺陷：**编译器不会创建单个`StringBuilder`以复用，会导致创建过多的`StringBuilder`对象**。
 
@@ -594,7 +594,7 @@ for (int i = 0; i < arr.length; i++) {
 System.out.println(s);
 ```
 
-![循环中使用"+"拼接字符串](Java SE.assets/image-20220422161320823.png)
+![循环中使用"+"拼接字符串](JavaSE.assets/image-20220422161320823.png)
 
 #### 字符串常量池的作用？
 
@@ -681,7 +681,7 @@ System.out.println(c == d);// true
 
 Java异常类层次结构图：
 
-![异常类层次结构](Java SE.assets/types-of-exceptions-in-java.75041da9.png)
+![异常类层次结构](JavaSE.assets/types-of-exceptions-in-java.75041da9.png)
 
 ### 6.1 `Exception`和`Error`有什么区别？:airplane:
 
@@ -1000,7 +1000,7 @@ public static void change(int[] array) {
 
 也就是说`change`方法的参数拷贝的是`arr`（实参）的地址，因此它和`arr`指向的是同一个数组对象，这也就说明了为什么方法内部对形参的修改会影响到实参。
 
-![传递引用类型参数](Java SE.assets/java-value-passing-02.56cd0601.jpg)
+![传递引用类型参数](JavaSE.assets/java-value-passing-02.56cd0601.jpg)
 
 #### 传递引用类型参数2
 
@@ -1035,7 +1035,7 @@ public static void swap(Person person1, Person person2) {
 
 `swap`方法的参数`person1`和`person2`只是拷贝了实参`xiaoZhang`和`xiaoLi`的地址。因此，**`person1`和`person2`的互换只是拷贝的两个地址的互换，并不会影响到实参`xiaoZhang`和`xiaoLi`**。
 
-![传递引用类型参数](Java SE.assets/java-value-passing-03.7d64c8e9.png)
+![传递引用类型参数](JavaSE.assets/java-value-passing-03.7d64c8e9.png)
 
 #### 总结
 
@@ -1059,13 +1059,13 @@ Java中将实参传递给方法的方式是**值传递**：
 
 序列化的主要目的是**通过网络传输对象或者说是将对象存储到文件系统、数据库、内存中。**
 
-![I/O](Java SE.assets/a478c74d-2c48-40ae-9374-87aacf05188c.png)
+![I/O](JavaSE.assets/a478c74d-2c48-40ae-9374-87aacf05188c.png)
 
 ### 11.2 序列化协议对应TCP/IP4层模型的哪一层？
 
 OSI七层模型中，表示层做的事情主要就是对应用层的用户数据进行处理转换为二进制流。反过来的话，就是将二进制流转换成应用层的用户数据。
 
-![OSI七层模型](Java SE.assets/6ecb84cd-4227-4c7b-a2e8-b77054604400-20200802201216504.png)
+![OSI七层模型](JavaSE.assets/6ecb84cd-4227-4c7b-a2e8-b77054604400-20200802201216504.png)
 
 OSI七层协议模型中的应用层、表示层和会话层对应的都是TCP/IP四层模型中的应用层，所以**序列化协议属于TCP/IP协议应用层的一部分**。
 
@@ -1459,7 +1459,7 @@ UNIX系统下，I/O模型一共有5种：**同步阻塞 I/O**、**同步非阻�
 
 **BIO属于同步阻塞I/O模型** 。同步阻塞IO模型中，应用程序发起`read`调用后，会一直阻塞，**直到内核把数据拷贝到用户空间**。
 
-![同步阻塞](Java SE.assets/微信截图_20220705104817.png)
+![同步阻塞](JavaSE.assets/微信截图_20220705104817.png)
 
 在客户端连接数量不高的情况下是没问题的。但是当面对十万甚至百万级连接的时候，传统的BIO模型是无能为力的。因此需要一种更高效的I/O处理模型来应对更高的并发量。
 
@@ -1469,13 +1469,13 @@ Java中的NIO对应`java.nio`包，提供了`Channel`，`Selector`，`Buffer`等
 
 Java中的NIO可以看作是**I/O多路复用模型**。也有很多人认为，Java中的NIO属于**同步非阻塞I/O模型**。
 
-![同步非阻塞](Java SE.assets/微信截图_20220705105347.png)
+![同步非阻塞](JavaSE.assets/微信截图_20220705105347.png)
 
 同步非阻塞I/O模型中，应用程序会一直发起`read`调用，等待数据从内核空间拷贝到用户空间的这段时间里，线程依然是阻塞的，直到在内核把数据拷贝到用户空间。相比于同步阻塞I/O模型，同步非阻塞I/O模型确实有了很大改进：**通过轮询操作，避免了一直阻塞**。
 
 但是，这种I/O模型同样存在问题：**应用程序不断进行系统调用的过程（轮询）是十分消耗 CPU 资源的。**这个时候，**I/O多路复用模型**就上场了。
 
-![I/O多路复用](Java SE.assets/微信截图_20220705105713.png)
+![I/O多路复用](JavaSE.assets/微信截图_20220705105713.png)
 
 I/O多路复用模型中，线程首先发起`select`调用，询问内核数据是否准备就绪，等内核把数据准备好了，用户线程再发起`read`调用，其过程还是阻塞的。
 
@@ -1485,11 +1485,11 @@ I/O多路复用模型中，线程首先发起`select`调用，询问内核数据
 
 AIO也就是NIO 2，属于异步I/O模型。异步I/O是**基于事件和回调机制**实现的，也就是应用操作之后会直接返回，不会堵塞在那里，当后台处理完成，操作系统会通知相应的线程进行后续的操作。
 
-![异步I/O](Java SE.assets/微信截图_20220705110115.png)
+![异步I/O](JavaSE.assets/微信截图_20220705110115.png)
 
 #### 总结
 
-![总结](Java SE.assets/33b193457c928ae02217480f994814b6.png)
+![总结](JavaSE.assets/33b193457c928ae02217480f994814b6.png)
 
 ### 13.4 I/O流分几种？
 
@@ -1518,7 +1518,7 @@ Java I/O流共涉及40多个类，都是从如下4个抽象类基类中派生出
 
 Java集合，也叫作容器，主要包括`Collection`和`Map`两种，`Collection`存储着对象的集合，而`Map`存储着键值对（两个对象）的映射表。
 
-![类关系图](Java SE.assets/java_collections_overview.png)
+![类关系图](JavaSE.assets/java_collections_overview.png)
 
 ### 14.2 `ArrayList`源码分析:rocket:
 
@@ -1532,7 +1532,7 @@ Java集合，也叫作容器，主要包括`Collection`和`Map`两种，`Collect
 
 Java泛型只是编译器提供的语法糖，所以这里的数组是一个Object数组，以便能够容纳任何类型的对象。
 
-![ArrayList底层数组](Java SE.assets/ArrayList_base.png)
+![ArrayList底层数组](JavaSE.assets/ArrayList_base.png)
 
 `size()`，`isEmpty()`，`get()`，`set()`方法均能在常数时间内完成，`add()`方法的**时间开销跟插入位置有关**，`addAll()`方法的**时间开销跟添加元素的个数成正比**，其余方法大都是线性时间。
 
@@ -2122,7 +2122,7 @@ public void ensureCapacity(int minCapacity) {
 
 ##### 总结（自己）:rocket:
 
-![ArrayList扩容机制](Java SE.assets/ArrayList扩容机制.png)
+![ArrayList扩容机制](JavaSE.assets/ArrayList扩容机制.png)
 
 
 
