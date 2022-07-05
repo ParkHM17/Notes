@@ -683,7 +683,7 @@ Java异常类层次结构图：
 
 ![异常类层次结构](Java SE.assets/types-of-exceptions-in-java.75041da9.png)
 
-### 6.1 `Exception`和`Error`有什么区别？
+### 6.1 `Exception`和`Error`有什么区别？:airplane:
 
 在Java中，所有异常都有一个共同的祖先，即`java.lang`包中的`Throwable`类，它有两个重要的子类：
 
@@ -712,7 +712,7 @@ Java异常类层次结构图：
 - `String getLocalizedMessage()`：返回异常对象的本地化信息。使用`Throwable`的子类覆盖这个方法，可以生成本地化信息。如果子类没有覆盖该方法，则该方法返回的信息与`getMessage()`返回的结果相同。
 - `void printStackTrace()`：在控制台上打印`Throwable`对象封装的异常信息。
 
-### 6.4 `finally`块中的代码一定会被执行吗？
+### 6.4 `finally`块中的代码一定会被执行吗？:airplane:
 
 不一定，在某些情况下，`finally`中的代码不会被执行，例如在`finally`之前虚拟机被终止运行的话，块中的代码就不会被执行。
 
@@ -933,34 +933,11 @@ public interface Override extends Annotation{
 - **编译期直接扫描**：**编译器在编译Java代码的时候扫描对应的注解并处理**，比如某个方法使用`@Override`注解，编译器在编译的时候就会**检测当前的方法是否重写了父类对应的方法**。
 - **运行期通过反射处理**：像框架中自带的注解（比如Spring框架的`@Value`、`@Component`）都是通过反射来进行处理的。
 
-## 十、I/O
-
-> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#i-o)
-
-### 10.3 I/O流分几种？
-
-- 按照流的**流向**分，可以分为输入流和输出流。
-- 按照**操作单元**划分，可以划分为字节流和字符流。
-- 按照流的**角色**划分，可以划分为节点流和处理流。
-
-Java I/O流共涉及40多个类，都是从如下4个抽象类基类中派生出来的：
-
-- InputStream/Reader：所有的输入流的基类，前者是字节输入流，后者是字符输入流。
-- OutputStream/Writer：所有输出流的基类，前者是字节输出流，后者是字符输出流。
-
-### 10.4 有了字节流为什么还要有字符流？
-
-**不管是文件读写还是网络发送接收，信息的最小存储单元都是字节，那为什么I/O流操作要分为字节流操作和字符流操作呢**？
-
-字符流是由Java虚拟机将字节转换得到的，问题就出在**这个过程还算是非常耗时**，并且，如果不知道编码类型就很容易出现乱码问题。
-
-所以，I/O流就提供了一个直接操作字符的接口，方便平时对字符进行流操作。如果音频文件、图片等**媒体文件用字节流比较好**，如果涉及到字符的话使用字符流比较好。
-
-## 十一、值传递
+## 十、值传递
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/basis/why-there-only-value-passing-in-java.html)
 
-### 11.1 值传递/引用传递
+### 10.1 值传递/引用传递
 
 程序设计语言将实参传递给方法（或函数）的方式分为两种：
 
@@ -969,7 +946,7 @@ Java I/O流共涉及40多个类，都是从如下4个抽象类基类中派生出
 
 很多程序设计语言（比如C++、 Pascal）提供了两种参数传递的方式，但是在Java中只有值传递。
 
-### 11.2 为什么Java中只有值传递？
+### 10.2 为什么Java中只有值传递？:airplane:
 
 #### 传递基本类型参数
 
@@ -1067,11 +1044,11 @@ Java中将实参传递给方法的方式是**值传递**：
 - 如果参数是基本类型，传递的就是**基本类型的字面量值的拷贝，会创建副本**。
 - 如果参数是引用类型，传递的就是**所引用的对象在堆中地址值的拷贝，同样也会创建副本**。
 
-## 十二、序列化
+## 十一、序列化
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/basis/serialization.html)
 
-### 12.1 什么是序列化？什么是反序列化？
+### 11.1 什么是序列化？什么是反序列化？
 
 如果需要持久化Java对象，比如将Java对象保存在文件中，或者在网络传输Java对象，这些场景都需要用到序列化。简单来说：
 
@@ -1084,7 +1061,7 @@ Java中将实参传递给方法的方式是**值传递**：
 
 ![I/O](Java SE.assets/a478c74d-2c48-40ae-9374-87aacf05188c.png)
 
-### 12.2 序列化协议对应TCP/IP4层模型的哪一层？
+### 11.2 序列化协议对应TCP/IP4层模型的哪一层？
 
 OSI七层模型中，表示层做的事情主要就是对应用层的用户数据进行处理转换为二进制流。反过来的话，就是将二进制流转换成应用层的用户数据。
 
@@ -1092,7 +1069,7 @@ OSI七层模型中，表示层做的事情主要就是对应用层的用户数�
 
 OSI七层协议模型中的应用层、表示层和会话层对应的都是TCP/IP四层模型中的应用层，所以**序列化协议属于TCP/IP协议应用层的一部分**。
 
-### 12.3 如果不想进行序列化怎么办？
+### 11.3 如果不想进行序列化怎么办？
 
 对于不想进行序列化的变量，使用`transient`关键字修饰。`transient`关键字的作用是：**阻止实例中那些用此关键字修饰的的变量序列化**；当对象被反序列化时，被`transient`修饰的变量值不会被持久化和恢复。
 
@@ -1102,7 +1079,7 @@ OSI七层协议模型中的应用层、表示层和会话层对应的都是TCP/I
 - `transient`修饰的变量，在反序列化后变量值将会被置成类型的默认值。例如，如果是修饰`int`类型，那么反序列后结果就是`0`。
 - `static`变量因为不属于任何对象（Object），所以无论有没有`transient`关键字修饰，均不会被序列化。
 
-### 12.4 常见序列化协议
+### 11.4 常见序列化协议
 
 JDK自带的序列化方式一般不会用 ，因为序列化效率低并且部分版本有安全漏洞。比较常用的序列化协议有hessian、kyro、protostuff。
 
@@ -1150,11 +1127,11 @@ protostuff基于Google的protobuf，但是提供了更多的功能和更简易�
 
 hessian是一个轻量级的,自定义描述的二进制RPC协议。hessian是一个比较老的序列化，并且同样也是跨语言的。
 
-## 十三、代理模式
+## 十二、代理模式
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/basis/proxy.html)
 
-### 13.1 代理模式
+### 12.1 代理模式
 
 代理模式是一种比较好理解的设计模式。简单来说就是**使用代理对象来代替对真实对象的访问**，这样就可以在不修改原目标对象的前提下，提供额外的功能操作，扩展目标对象的功能。
 
@@ -1162,6 +1139,376 @@ hessian是一个轻量级的,自定义描述的二进制RPC协议。hessian是�
 
 代理模式有静态代理和动态代理两种实现方式。
 
-### 13.2 静态代理
+### 12.2 静态代理
 
-### 13.3 动态代理
+静态代理中，对目标对象的每个方法的增强都是手动完成的，非常不灵活（比如接口一旦新增加方法，目标对象和代理对象都要进行修改）且麻烦（需要对每个目标类都单独写一个代理类）。
+
+从JVM层面来说，**静态代理在编译时就将接口、实现类、代理类这些都变成了一个个实际的`.class`文件**。
+
+静态代理实现步骤：
+
+1. 定义一个接口及其实现类；
+2. 创建一个代理类同样实现这个接口；
+3. **将目标对象注入进代理类**，然后在**代理类的对应方法调用目标类中的对应方法**。这样就可以通过代理类屏蔽对目标对象的访问，并且可以在目标方法执行前后自定义其他方法。
+
+示例：
+
+```java
+// 定义发送短信的接口
+public interface SmsService {
+    String send(String message);
+}
+
+// 实现接口
+public class SmsServiceImpl implements SmsService {
+    public String send(String message) {
+        System.out.println("send message:" + message);
+        return message;
+    }
+}
+
+// 创建代理类并实现接口
+public class SmsProxy implements SmsService {
+
+    private final SmsService smsService;
+
+    public SmsProxy(SmsService smsService) {
+        this.smsService = smsService;
+    }
+
+    @Override
+    public String send(String message) {
+        //调用方法之前，添加操作
+        System.out.println("before method send()");
+        smsService.send(message);
+        //调用方法之后，添加操作
+        System.out.println("after method send()");
+        return null;
+    }
+}
+
+// 测试
+public class Main {
+    public static void main(String[] args) {
+        // 目标对象
+        SmsService smsService = new SmsServiceImpl();
+        // 注入进代理对象
+        SmsProxy smsProxy = new SmsProxy(smsService);
+        smsProxy.send("java");
+    }
+}
+
+// 输出
+// before method send()
+// send message:java
+// after method send()
+```
+
+### 12.3 动态代理:airplane:
+
+相比于静态代理来说，动态代理更加灵活，因为不需要针对每个目标类都单独创建一个代理类，并且也不需要实现接口，可以直接代理实现类。
+
+从JVM角度来说，**动态代理是在运行时动态生成类字节码，并加载到JVM中的**。就Java来说，动态代理的实现方式有很多种，比如**JDK动态代理**、**CGLIB动态代理**等。
+
+#### JDK动态代理
+
+##### 介绍
+
+在Java动态代理机制中，`InvocationHandler`接口和`Proxy`类是核心。`Proxy`类中使用频率最高的方法是：`newProxyInstance()`，这个方法主要用于生成一个代理对象。
+
+```java
+public static Object newProxyInstance(ClassLoader loader,
+                                      Class<?>[] interfaces,
+                                      InvocationHandler h) 
+    throws IllegalArgumentException {
+    ……
+}
+```
+
+这个方法一共有3个参数：
+
+- **`loader`**：类加载器，用于加载代理对象。
+- **`interfaces`**：被代理类实现的一些接口。
+- **`h`**：实现了`InvocationHandler`接口的对象。
+
+要实现动态代理的话，还必须需要实现`InvocationHandler`来自定义处理逻辑。 当动态代理对象调用一个方法时，这个方法的调用就会被转发到实现`InvocationHandler`接口类的`invoke()`方法来调用。
+
+```java
+public interface InvocationHandler {
+    /**
+     * 当你使用代理对象调用方法的时候实际会调用到这个方法
+     */
+    public Object invoke(Object proxy, Method method, Object[] args)
+        throws Throwable;
+}
+```
+
+这个方法有3个参数：
+
+- **`proxy`**：动态生成的代理类。
+- **`method`**：与代理类对象调用的方法相对应。
+- **`args`**：当前`method()`方法的参数。
+
+也就是说：**通过`Proxy`类的`newProxyInstance()`创建的代理对象，在调用方法的时候，实际会调用到实现`InvocationHandler`接口的类的`invoke()`方法**。所以可以在`invoke()`方法中自定义处理逻辑，比如在方法执行前后做什么事情。
+
+##### 使用步骤
+
+1. 定义一个接口及其实现类；
+2. 自定义`InvocationHandler`并重写`invoke()`方法，在`invoke()`方法中会调用原生方法并自定义一些处理逻辑；
+3. 通过`Proxy.newProxyInstance(ClassLoader loader,Class<?>[] interfaces,InvocationHandler h)`方法创建代理对象。
+
+##### 示例
+
+```java
+// 定义发送短信的接口
+public interface SmsService {
+    String send(String message);
+}
+
+// 实现接口
+public class SmsServiceImpl implements SmsService {
+    public String send(String message) {
+        System.out.println("send message:" + message);
+        return message;
+    }
+}
+
+// 定义动态代理类
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+public class DebugInvocationHandler implements InvocationHandler {
+    // 代理类中的真实对象
+    private final Object target;
+
+    public DebugInvocationHandler(Object target) {
+        this.target = target;
+    }
+
+    public Object invoke(Object proxy, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
+        //调用方法之前，我们可以添加自己的操作
+        System.out.println("before method " + method.getName());
+        Object result = method.invoke(target, args);
+        //调用方法之后，我们同样可以添加自己的操作
+        System.out.println("after method " + method.getName());
+        return result;
+    }
+}
+
+// 获取代理对象的工厂类
+public class JdkProxyFactory {
+    public static Object getProxy(Object target) {
+        return Proxy.newProxyInstance(
+                target.getClass().getClassLoader(), // 目标类的类加载
+                target.getClass().getInterfaces(),  // 代理需要实现的接口，可指定多个
+                new DebugInvocationHandler(target)   // 代理对象对应的自定义 InvocationHandler
+        );
+    }
+}
+
+// 测试
+SmsService smsService = (SmsService) JdkProxyFactory.getProxy(new SmsServiceImpl());
+smsService.send("java");
+
+// 输出
+// before method send
+// send message:java
+// after method send
+```
+
+#### CGLIB动态代理
+
+##### 介绍
+
+JDK动态代理有一个最致命的问题是**只能代理那些实现了接口的类**。为了解决这个问题，可以用CGLIB动态代理机制来避免。
+
+CGLIB是一个字节码生成库，它可以**在运行时对字节码进行修改和动态生成**。CGLIB通过**继承**方式实现代理。很多知名的开源框架都使用到了CGLIB，例如Spring中的AOP模块：如果目标对象实现了接口，则默认采用JDK动态代理，否则采用CGLIB动态代理。
+
+在CGLIB动态代理机制中，`MethodInterceptor`接口和`Enhancer`类是核心。
+
+需要自定义`MethodInterceptor`并重写`intercept()`方法，`intercept()`用于拦截增强被代理类的方法。
+
+```java
+public interface MethodInterceptor
+extends Callback{
+    // 拦截被代理类中的方法
+    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,MethodProxy proxy) throws Throwable;
+}
+```
+
+4个参数：
+
+- **`obj`**：动态生成的代理对象。
+- **`method`**：被拦截的方法（需要增强的方法）。
+- **`args`**：方法入参。
+- **`proxy`**：用于调用原始方法。
+
+可以通过`Enhancer`类来动态获取被代理类，当代理类调用方法的时候，**实际调用的是`MethodInterceptor`中的`intercept()`方法**。
+
+##### 使用步骤
+
+1. 定义一个类；
+2. 自定义`MethodInterceptor`并重写`intercept()`方法，`intercept()`用于拦截增强被代理类的方法，和JDK动态代理中的`invoke()`方法类似；
+3. 通过`Enhancer`类的`create()`创建代理类。
+
+##### 示例
+
+```java
+// 添加相关依赖
+<dependency>
+  <groupId>cglib</groupId>
+  <artifactId>cglib</artifactId>
+  <version>3.3.0</version>
+</dependency>
+
+// 实现类
+package github.javaguide.dynamicProxy.cglibDynamicProxy;
+
+public class AliSmsService {
+    public String send(String message) {
+        System.out.println("send message:" + message);
+        return message;
+    }
+}
+
+// 自定义MethodInterceptor并重写intercept()方法
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+import java.lang.reflect.Method;
+
+public class DebugMethodInterceptor implements MethodInterceptor {
+    @Override
+    public Object intercept(Object o, // 代理对象（增强的对象）
+                            Method method, // 被拦截的方法（需要增强的方法）
+                            Object[] args, // 方法入参
+                            MethodProxy methodProxy) // 用于调用原始方法
+        throws Throwable {
+        //调用方法之前，我们可以添加自己的操作
+        System.out.println("before method " + method.getName());
+        Object object = methodProxy.invokeSuper(o, args);
+        //调用方法之后，我们同样可以添加自己的操作
+        System.out.println("after method " + method.getName());
+        return object;
+    }
+}
+
+// 创建代理类
+import net.sf.cglib.proxy.Enhancer;
+
+public class CglibProxyFactory {
+
+    public static Object getProxy(Class<?> clazz) {
+        // 创建动态代理增强类
+        Enhancer enhancer = new Enhancer();
+        // 设置类加载器
+        enhancer.setClassLoader(clazz.getClassLoader());
+        // 设置被代理类
+        enhancer.setSuperclass(clazz);
+        // 设置方法拦截器
+        enhancer.setCallback(new DebugMethodInterceptor());
+        // 创建代理类
+        return enhancer.create();
+    }
+}
+
+// 测试
+AliSmsService aliSmsService = (AliSmsService) CglibProxyFactory.getProxy(AliSmsService.class);
+aliSmsService.send("java");
+
+// 输出
+// before method send
+// send message:java
+// after method send
+```
+
+#### 二者对比
+
+- **JDK动态代理只能代理实现了接口的类或者直接代理接口，而CGLIB可以代理未实现任何接口的类**。另外， CGLIB动态代理是通过**生成一个被代理类的子类来拦截被代理类的方法调用（继承方式）**，因此不能代理声明为`final`类型的类和方法。
+- 就二者的效率来说，大部分情况都是**JDK动态代理更优秀**，随着JDK版本的升级，这个优势更加明显。
+
+### 12.4 静态代理和动态代理的对比
+
+- **灵活性**：动态代理更加灵活，不需要必须实现接口，可以直接代理实现类（CGLIB动态代理），并且可以不需要针对每个目标类都创建一个代理类。另外，静态代理中，接口一旦新增加方法，目标对象和代理对象都要进行修改，这是非常麻烦的。
+- **JVM层面**：**静态代理在编译时**就将接口、实现类、代理类这些都变成了一个个实际的`.class`文件；而**动态代理是在运行时**动态生成类字节码，并加载到JVM中。
+
+## 十三、I/O模型
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/io.html)、[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#i-o)
+
+### 13.1 何为I/O？
+
+从计算机结构的视角来看，I/O描述了**计算机系统与外部设备之间通信的过程**。
+
+根据操作系统相关知识：为了保证操作系统的稳定性和安全性，一个进程的地址空间划分为**用户空间（User space）**和**内核空间（Kernel space ）**。平常运行的应用程序都是在用户空间，只有内核空间才能进行系统态级别的资源有关的操作，并且用户空间的程序不能直接访问内核空间。
+
+当想要执行I/O操作时，由于没有执行这些操作的权限，只能发起**系统调用**请求操作系统帮忙完成。在平常开发过程中接触最多的就是**磁盘IO（读写文件）**和**网络IO（网络请求和响应）**。
+
+当应用程序发起I/O调用后，会经历两个步骤：
+
+1. 内核等待I/O设备准备好数据。
+2. 内核将数据从内核空间拷贝到用户空间。
+
+### 13.2 有哪些常见的I/O模型？
+
+UNIX系统下，I/O模型一共有5种：**同步阻塞 I/O**、**同步非阻塞I/O**、**I/O多路复用**、**信号驱动I/O**和**异步I/O**。
+
+### 13.3 Java中常见的3种I/O模型:airplane:
+
+#### BIO(Blocking I/O)
+
+**BIO属于同步阻塞I/O模型** 。同步阻塞IO模型中，应用程序发起`read`调用后，会一直阻塞，**直到内核把数据拷贝到用户空间**。
+
+![同步阻塞](Java SE.assets/微信截图_20220705104817.png)
+
+在客户端连接数量不高的情况下是没问题的。但是当面对十万甚至百万级连接的时候，传统的BIO模型是无能为力的。因此需要一种更高效的I/O处理模型来应对更高的并发量。
+
+#### NIO(Non-blocking I/O)
+
+Java中的NIO对应`java.nio`包，提供了`Channel`，`Selector`，`Buffer`等抽象类。NIO中的N可以理解为Non-blocking，不单纯是New。它是**支持面向缓冲**的、基于通道的I/O操作方法。对于高负载、高并发的（网络）应用，应使用 NIO。
+
+Java中的NIO可以看作是**I/O多路复用模型**。也有很多人认为，Java中的NIO属于**同步非阻塞I/O模型**。
+
+![同步非阻塞](Java SE.assets/微信截图_20220705105347.png)
+
+同步非阻塞I/O模型中，应用程序会一直发起`read`调用，等待数据从内核空间拷贝到用户空间的这段时间里，线程依然是阻塞的，直到在内核把数据拷贝到用户空间。相比于同步阻塞I/O模型，同步非阻塞I/O模型确实有了很大改进：**通过轮询操作，避免了一直阻塞**。
+
+但是，这种I/O模型同样存在问题：**应用程序不断进行系统调用的过程（轮询）是十分消耗 CPU 资源的。**这个时候，**I/O多路复用模型**就上场了。
+
+![I/O多路复用](Java SE.assets/微信截图_20220705105713.png)
+
+I/O多路复用模型中，线程首先发起`select`调用，询问内核数据是否准备就绪，等内核把数据准备好了，用户线程再发起`read`调用，其过程还是阻塞的。
+
+**I/O多路复用模型，通过减少无效的系统调用，减少了对CPU资源的消耗**。Java中的NIO，有一个非常重要的**选择器 （Selector）**的概念，也可以被称为**多路复用器**。通过它，只需要一个线程便可以管理多个客户端连接。当客户端数据到了之后，才会为其服务。
+
+#### AIO(Asynchronous I/O)
+
+AIO也就是NIO 2，属于异步I/O模型。异步I/O是**基于事件和回调机制**实现的，也就是应用操作之后会直接返回，不会堵塞在那里，当后台处理完成，操作系统会通知相应的线程进行后续的操作。
+
+![异步I/O](Java SE.assets/微信截图_20220705110115.png)
+
+#### 总结
+
+![总结](Java SE.assets/33b193457c928ae02217480f994814b6.png)
+
+### 13.4 I/O流分几种？
+
+- 按照流的**流向**分，可以分为输入流和输出流。
+- 按照**操作单元**划分，可以划分为字节流和字符流。
+- 按照流的**角色**划分，可以划分为节点流和处理流。
+
+Java I/O流共涉及40多个类，都是从如下4个抽象类基类中派生出来的：
+
+- InputStream/Reader：所有的输入流的基类，前者是字节输入流，后者是字符输入流。
+- OutputStream/Writer：所有输出流的基类，前者是字节输出流，后者是字符输出流。
+
+### 13.5 有了字节流为什么还要有字符流？
+
+**不管是文件读写还是网络发送接收，信息的最小存储单元都是字节，那为什么I/O流操作要分为字节流操作和字符流操作呢**？
+
+字符流是由Java虚拟机将字节转换得到的，问题就出在**这个过程还算是非常耗时**，并且，如果不知道编码类型就很容易出现乱码问题。
+
+所以，I/O流就提供了一个直接操作字符的接口，方便平时对字符进行流操作。如果音频文件、图片等**媒体文件用字节流比较好**，如果涉及到字符的话使用字符流比较好。
+
+## 十四、Java集合
+
