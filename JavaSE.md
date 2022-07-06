@@ -2564,13 +2564,147 @@ public void ensureCapacity(int minCapacity) {
 
 #### 概述
 
+Java里有一个`Stack`的类，却没有`Queue`的类（它是个接口名字）。当需要使用栈时，Java已不推荐使用`Stack`，而是推荐使用更高效的`ArrayDeque`；既然`Queue`只是一个接口，当需要使用队列时也就首选`ArrayDeque`了（次选是`LinkedList`）。
+
+#### `Queue`
+
+`Queue`接口继承自`Collection`接口，除了最基本的方法之外，它还支持额外的6个方法，分为两组，一组是抛出异常的实现，另外一组是返回值的实现（没有则返回`null`）。
+
+| 操作 |  抛出异常   |   返回值   |
+| :--: | :---------: | :--------: |
+| 插入 |  `add(e)`   | `offer(e)` |
+| 移除 | `remove()`  |  `poll()`  |
+| 检索 | `element()` |  `peek()`  |
+
+#### `Deque`
+
+`Deque`是"Double Ended Queue"，表示双向队列。`Deque`继承自`Queue`接口，由于`Deque`是双向的，所以可以对队列的头和尾都进行操作，它同时也支持两组格式，一组是抛出异常的实现；另外一组是返回值的实现（没有则返回`null`），共12个方法:
+
+| 操作 |              抛出异常               |              返回值               |
+| :--: | :---------------------------------: | :-------------------------------: |
+| 插入 |    `addFirst()`<br />`addLast()`    | `offerFirst()`<br />`offerLast()` |
+| 移除 | `removeFirst()`<br />`removeLast()` |  `pollFirst()`<br />`pollLast()`  |
+| 检索 |    `getFirst()`<br />`getLast()`    |  `peekFirst()`<br />`peekLast()`  |
+
+`ArrayDeque`和`LinkedList`是`Deque`的两个通用实现，官方更推荐使用`AarryDeque`用作栈和队列。
+
+从名字可以看出`ArrayDeque`底层通过数组实现，为了满足可以**同时在数组两端插入或删除元素的需求**，该数组还必须是循环的，即**循环数组（Circular Array）**，也就是说数组的任何一点都可能被看作起点或者终点。
+
+`ArrayDeque`是非线程安全的，当多个线程同时使用时，需要程序员手动同步。另外，该容器不允许放入`null`元素。
+
+![ArrayDeque](JavaSE.assets/ArrayDeque_base.png)
+
+可以看出，**`head`指向首端第一个有效元素，`tail`指向尾端第一个可以插入元素的空位**。因为是循环数组，所以`head`不一定总等于0，`tail`也不一定总是比`head`大。
+
 #### 核心源码
 
+##### 构造函数
 
+```java
+// 有参构造的最小容量，容量必须为2的n次幂
+private static final int MIN_INITIAL_CAPACITY = 8;
 
+// 无参构造，容量为16
+public ArrayDeque() {
+    elements = new Object[16];
+}
 
+public ArrayDeque(int numElements) {
+    allocateElements(numElements);
+}
 
-### 14.5 `PriorityQueue`源码分析
+public ArrayDeque(Collection<? extends E> c) {
+    allocateElements(c.size());
+    addAll(c);
+}
+
+// 如果有参构造的参数<8,那么最后容量为8；如果>=8，则计算最接近numElements的2的次方的那个值
+private void allocateElements(int numElements) {
+    int initialCapacity = MIN_INITIAL_CAPACITY;
+    // Find the best power of two to hold elements.
+    // Tests "<=" because arrays aren't kept full.
+    if (numElements >= initialCapacity) {
+        initialCapacity = numElements;
+        initialCapacity |= (initialCapacity >>>  1);
+        initialCapacity |= (initialCapacity >>>  2);
+        initialCapacity |= (initialCapacity >>>  4);
+        initialCapacity |= (initialCapacity >>>  8);
+        initialCapacity |= (initialCapacity >>> 16);
+        initialCapacity++;
+
+        if (initialCapacity < 0)   // Too many elements, must back off
+            initialCapacity >>>= 1;// Good luck allocating 2 ^ 30 elements
+    }
+    elements = new Object[initialCapacity];
+}
+```
+
+关于容量：
+
+- 无参构造，容量为16。
+- 有参构造
+  - 参数小于8，容量为8。
+  - 参数大于等于8，容量为最接近这个参数的$2^n$的值。
+
+##### `addFirst()`
+
+`addFirst(E e)`的作用是在`Deque`的首端插入元素，也就是在`head`的前面插入元素，在空间足够且下标没有越界的情况下，只需要将`elements[--head] = e`即可。
+
+实际需要考虑两个问题：
+
+- 空间是否够用
+- 下标是否越界
+
+下图中，如果`head`为`0`之后接着调用`addFirst()`，虽然空余空间还够用，但`head`为`-1`，下标会越界了，源码中很好地解决了这个问题。
+
+![addFirst方法](JavaSE.assets/ArrayDeque_addFirst.png)
+
+```java
+public void addFirst(E e) {
+    if (e == null)
+        throw new NullPointerException();
+    // 解决下标越界，循环数组的关键
+    elements[head = (head - 1) & (elements.length - 1)] = e;
+    if (head == tail)
+        // 扩容
+        doubleCapacity();
+}
+```
+
+`head = (head - 1) & (elements.length - 1)`解决的就是下标越界问题。**这段代码相当于取余，同时解决了索引为负值的情况**。如果`head - 1`为负数（其实只可能是-1），运算结果就是`(elements.length - 1)`。
+
+扩容函数`doubleCapacity()`解决的是空间不够用的问题，其逻辑是申请一个更大的数组（原数组的两倍），然后将原数组复制过去：
+
+![扩容](JavaSE.assets/ArrayDeque_doubleCapacity.png)
+
+```java
+//doubleCapacity()
+private void doubleCapacity() {
+    assert head == tail;
+    int p = head;
+    int n = elements.length;
+    int r = n - p; // head右边元素的个数
+    int newCapacity = n << 1;//原空间的2倍
+    if (newCapacity < 0)
+        throw new IllegalStateException("Sorry, deque too big");
+    Object[] a = new Object[newCapacity];
+    System.arraycopy(elements, p, a, 0, r);//复制右半部分，对应上图中绿色部分
+    System.arraycopy(elements, 0, a, r, p);//复制左半部分，对应上图中灰色部分
+    elements = (E[])a;
+    head = 0;
+    tail = n;
+}
+```
+
+### 14.5 `PriorityQueue`源码分析:rocket:
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/java/collection/java-collection-PriorityQueue.html)
+
+#### 概述
+
+还有一种特殊的队列叫做`PriorityQueue`，即优先队列。**优先队列的作用是能保证每次取出的元素都是队列中权值最小的**（Java中优先队列每次取最小元素）。这里牵涉到了大小关系，**元素大小的评判可以通过元素本身的自然顺序（Natural Ordering），也可以通过构造时传入的比较器**（`Comparator`）。
+
+Java中*PriorityQueue*实现了*Queue*接口，不允许放入`null`元素；其通过堆实现，具体说是通过完全二叉树(*complete binary tree*)实现的**小顶堆**(任意一个非叶子节点的权值，都不大于其左右子节点的权值)，也就意味着可以通过数组来作为*PriorityQueue*的底层实现。
 
 ### 14.6 `HashSet`&`HashMap`源码分析
 
