@@ -2678,7 +2678,6 @@ public void addFirst(E e) {
 ![扩容](JavaSE.assets/ArrayDeque_doubleCapacity.png)
 
 ```java
-//doubleCapacity()
 private void doubleCapacity() {
     assert head == tail;
     int p = head;
@@ -2704,9 +2703,332 @@ private void doubleCapacity() {
 
 还有一种特殊的队列叫做`PriorityQueue`，即优先队列。**优先队列的作用是能保证每次取出的元素都是队列中权值最小的**（Java中优先队列每次取最小元素）。这里牵涉到了大小关系，**元素大小的评判可以通过元素本身的自然顺序（Natural Ordering），也可以通过构造时传入的比较器**（`Comparator`）。
 
-Java中*PriorityQueue*实现了*Queue*接口，不允许放入`null`元素；其通过堆实现，具体说是通过完全二叉树(*complete binary tree*)实现的**小顶堆**(任意一个非叶子节点的权值，都不大于其左右子节点的权值)，也就意味着可以通过数组来作为*PriorityQueue*的底层实现。
+Java中`PriorityQueue`实现了`Queue`接口，不允许放入`null`元素。通过堆实现，具体说是通过完全二叉树（Complete Binary Tree）实现的**小顶堆**，也就意味着可以通过数组来作为`PriorityQueue`的底层实现。
 
-### 14.6 `HashSet`&`HashMap`源码分析
+![优先队列](JavaSE.assets/PriorityQueue_base.png)
+
+上图中给每个元素按照层序遍历的方式进行了编号，编号之间有如下关系，通过这些可以根据任意结点坐标计算其子结点、父结点的坐标：
+$$
+leftNo=parentNo*2+1\\
+rightNo=parentNo*2+2\\
+parentNo=(nodeNo-1)/2
+$$
+`PriorityQueue`的`peek()`和`element`操作是常数时间，`add()`，`offer()`，无参数的`remove()`以及`poll()`方法的时间复杂度都是log(N)。
+
+#### 核心源码
+
+##### `add()`和`offer()`
+
+`add(E e)`和`offer(E e)`的语义相同，都是向优先队列中插入元素，只是`Queue`接口规定二者对插入失败时的处理不同，前者在插入失败时抛出异常，后则则会返回`false`。对于`PriorityQueue`这两个方法其实没什么差别。
+
+![offer方法](JavaSE.assets/PriorityQueue_offer.png)
+
+```java
+public boolean offer(E e) {
+    if (e == null)//不允许放入null元素
+        throw new NullPointerException();
+    modCount++;
+    int i = size;
+    if (i >= queue.length)
+        grow(i + 1);//自动扩容
+    size = i + 1;
+    if (i == 0)//队列原来为空，这是插入的第一个元素
+        queue[0] = e;
+    else
+        siftUp(i, e);//调整
+    return true;
+}
+```
+
+扩容函数`grow()`类似于`ArrayList`里的`grow()`函数。需要注意的是`siftUp(int k, E x)`方法，该方法用于插入元素`x`并维持堆的特性。
+
+```java
+private void siftUp(int k, E x) {
+    while (k > 0) {
+        int parent = (k - 1) >>> 1;//parentNo = (nodeNo-1)/2
+        Object e = queue[parent];
+        if (comparator.compare(x, (E) e) >= 0)//调用比较器的比较方法
+            break;
+        queue[k] = e;
+        k = parent;
+    }
+    queue[k] = x;
+}
+```
+
+新加入的元素`x`可能会破坏堆的性质，因此需要进行调整。调整的过程为：**从`k`指定的位置开始，将`x`逐层与当前点的`parent`进行比较并交换，直到满足`x >= queue[parent]`为止**。注意这里的比较可以是元素的自然顺序，也可以是依靠比较器的顺序。
+
+##### `peek()`和`element()`
+
+`element()`和`peek()`的语义完全相同，都是获取但不删除首部元素，也就是**队列中权值最小的元素**，二者唯一的区别是当方法失败时前者抛出异常，后者返回`null`。根据小顶堆的性质，堆顶那个元素就是全局最小的那个；由于堆用数组表示，根据下标关系，`0`下标处的那个元素就是堆顶元素。所以**直接返回数组`0`下标处的那个元素即可**。
+
+![peek方法](JavaSE.assets/PriorityQueue_peek.png)
+
+```java
+public E peek() {
+    if (size == 0)
+        return null;
+    return (E) queue[0];//0下标处的那个元素就是最小的那个
+}
+```
+
+##### `remove()`和`poll()`
+
+`remove()`和`poll()`方法的语义也完全相同，都是获取并删除队首元素，区别是当方法失败时前者抛出异常，后者返回`null`。由于删除操作会改变队列的结构，为维护小顶堆的性质，需要进行必要的调整。
+
+![poll方法](JavaSE.assets/PriorityQueue_poll.png)
+
+```java
+public E poll() {
+    if (size == 0)
+        return null;
+    int s = --size;
+    modCount++;
+    E result = (E) queue[0];//0下标处的那个元素就是最小的那个
+    E x = (E) queue[s];
+    queue[s] = null;
+    if (s != 0)
+        siftDown(0, x);//调整
+    return result;
+}
+```
+
+首先记录`0`下标处的元素，并用最后一个元素替换`0`下标位置的元素，之后调用`siftDown()`方法对堆进行调整，最后返回原来`0`下标处的那个元素。重点是`siftDown(int k, E x)`方法，该方法的作用是：**从`k`指定的位置开始，将`x`逐层向下与当前点的左右孩子中较小的那个交换，直到`x`小于或等于左右孩子为止**。
+
+```java
+private void siftDown(int k, E x) {
+    int half = size >>> 1;
+    while (k < half) {
+    	//首先找到左右孩子中较小的那个，记录到c里，并用child记录其下标
+        int child = (k << 1) + 1;//leftNo = parentNo*2+1
+        Object c = queue[child];
+        int right = child + 1;
+        if (right < size &&
+            comparator.compare((E) c, (E) queue[right]) > 0)
+            c = queue[child = right];
+        if (comparator.compare(x, (E) c) <= 0)
+            break;
+        queue[k] = c;//然后用c取代原来的值
+        k = child;
+    }
+    queue[k] = x;
+}
+```
+
+##### `remove(Object o)`
+
+`remove(Object o)`方法用于删除队列中跟`o`相等的某一个元素（如果有多个相等，只删除一个），该方法不是`Queue`接口内的方法，而是`Collection`接口的方法。
+
+由于删除操作会改变队列结构，所以要进行调整；又由于删除元素的位置可能是任意的，所以调整过程比其它函数稍加繁琐。具体来说，`remove(Object o)`可以分为2种情况：
+
+- 删除的是最后一个元素：直接删除即可，不需要调整。
+- 删除的不是最后一个元素：从删除点开始以最后一个元素为参照调用一次`siftDown()`即可。
+
+```java
+public boolean remove(Object o) {
+	//通过遍历数组的方式找到第一个满足o.equals(queue[i])元素的下标
+    int i = indexOf(o);
+    if (i == -1)
+        return false;
+    int s = --size;
+    if (s == i) //情况1
+        queue[i] = null;
+    else {
+        E moved = (E) queue[s];
+        queue[s] = null;
+        siftDown(i, moved);//情况2
+        ......
+    }
+    return true;
+}
+```
+
+### 14.6 `HashSet`&`HashMap`源码分析:rocket:
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/collection/hashmap-source-code.html)、[Java全栈知识体系](https://pdai.tech/md/java/collection/java-map-HashMap&HashSet.html)
+
+`HashSet`和`HashMap`在Java里有着相同的实现，前者仅仅是对后者做了一层包装，也就是说`HashSet`里面有一个`HashMap`（适配器模式）。
+
+#### 概述
+
+`HashMap`主要用来存放键值对，它实现了`Map`接口，是常用的Java 集合之一，**非线程安全**的。`HashMap`可以存储`null`的`key`和`value`，但`null`作为键只能有一个，`null`作为值可以有多个。
+
+JDK 1.8之前`HashMap`由**数组+链表**组成的，数组是`HashMap`的主体，链表主要是为了解决哈希冲突而存在的（“拉链法”解决冲突）。
+
+JDK 1.8以后的`HashMap`在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为8）时，**将链表转化为红黑树**，以减少搜索时间（转换前会判断，如果当前数组的长度小于64，那么会选择先进行数组扩容，而不是转换为红黑树）。
+
+`HashMap`默认的初始化大小为16，之后每次扩充容量都变为原来的2倍（`HashMap`总是使用$2^n$作为容量）。
+
+#### 底层数据结构
+
+##### JDK 1.8之前
+
+JDK 1.8之前`HashMap`底层是**数组和链表**结合在一起使用，也就是**链表散列**。
+
+`HashMap`通过`key`的`hashCode()`经过扰动函数处理过后得到哈希值，然后通过`(n - 1) & hash`判断当前元素存放的位置（`n`表示数组长度）。如果当前位置存在元素的话，就判断该元素与要存入的元素的哈希值以及`key`是否相同，如果相同的话，直接覆盖，不相同就通过拉链法解决冲突。
+
+所谓扰动函数指的就是`HashMap`的`hash()`方法。使用它是为了防止一些实现比较差的`hashCode()`方法，换句话说就是**使用扰动函数之后可以减少碰撞**。
+
+```java
+// JDK 1.8
+static final int hash(Object key) {
+      int h;
+      // key.hashCode()：返回散列值也就是hashcode
+      // ^ ：按位异或
+      // >>>:无符号右移，忽略符号位，空位都以0补齐
+      return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+}
+
+// JDK 1.7
+static int hash(int h) {
+    // This function ensures that hashCodes that differ only by
+    // constant multiples at each bit position have a bounded
+    // number of collisions (approximately 8 at default load factor).
+
+    h ^= (h >>> 20) ^ (h >>> 12);
+    return h ^ (h >>> 7) ^ (h >>> 4);
+}
+```
+
+相比于 JDK1.8，JDK 1.7的`hash()`方法的性能会稍差一点点，因为毕竟扰动了4次。
+
+所谓**“拉链法”** 就是：将链表和数组相结合。也就是说创建一个链表数组，**数组中每一格就是一个链表**。若遇到哈希冲突，则将冲突的值加到链表中即可。
+
+![拉链法](JavaSE.assets/jdk1.8之前的内部结构.png)
+
+##### JDK 1.8之后
+
+相比于之前的版本，JDK 1.8以后在解决哈希冲突时有了较大的变化。
+
+当链表长度大于阈值（默认为8）时，会首先调用`treeifyBin()`方法。这个方法会根据`HashMap`数组来决定是否转换为红黑树。只有当数组长度大于或者等于64的情况下，才会执行转换红黑树操作，以减少搜索时间；否则就只执行`resize()`方法对数组扩容。
+
+![红黑树](JavaSE.assets/capture_20220708010014273.bmp)
+
+###### 类的属性
+
+```java
+public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>, Cloneable, Serializable {
+    // 序列号
+    private static final long serialVersionUID = 362498820763181265L;
+    // 默认的初始容量是16
+    static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
+    // 最大容量
+    static final int MAXIMUM_CAPACITY = 1 << 30;
+    // 默认的填充因子
+    static final float DEFAULT_LOAD_FACTOR = 0.75f;
+    // 当桶(bucket)上的结点数大于这个值时会转成红黑树
+    static final int TREEIFY_THRESHOLD = 8;
+    // 当桶(bucket)上的结点数小于这个值时树转链表
+    static final int UNTREEIFY_THRESHOLD = 6;
+    // 桶中结构转化为红黑树对应的table的最小容量
+    static final int MIN_TREEIFY_CAPACITY = 64;
+    // 存储元素的数组，总是2的幂次倍
+    transient Node<k,v>[] table;
+    // 存放具体元素的集
+    transient Set<map.entry<k,v>> entrySet;
+    // 存放元素的个数，注意这个不等于数组的长度。
+    transient int size;
+    // 每次扩容和更改map结构的计数器
+    transient int modCount;
+    // 临界值(容量*填充因子) 当实际大小超过临界值时，会进行扩容
+    int threshold;
+    // 加载因子
+    final float loadFactor;
+}
+```
+
+- **`threshold`**：$threshold=capacity*loadFactor$，当 $size>=threshold$的时候，那么就要考虑对数组扩增，这个变量是**衡量数组是否需要扩增的标准**。
+
+- **loadFactor 加载因子**：**控制数组存放数据的疏密程度**。`loadFactor`越趋近于1，那 数组中存放的数据（entry）也就越多、越密，也就是会让链表的长度增加；`loadFactor`越趋近于0，数组中存放的数据（entry）也就越少、越稀疏。
+
+  `loadFactor`太大导致查找元素效率低，太小导致数组利用率低，存放的数据会很分散。`loadFactor`的默认值为`0.75f`，这是官方给出的临界值。
+
+  给定的默认容量为16，负载因子为0.75。在使用过程中不断往里面存放数据，当数量达到了$16*0.75=12$就需要将当前16的容量进行扩容，而扩容这个过程涉及到`rehash`、复制数据等操作，所以非常消耗性能。
+
+###### Node结点类源码
+
+```java
+// 继承自 Map.Entry<K,V>
+static class Node<K,V> implements Map.Entry<K,V> {
+       final int hash;// 哈希值，存放元素到hashmap中时用来与其他元素hash值比较
+       final K key;//键
+       V value;//值
+       // 指向下一个节点
+       Node<K,V> next;
+       Node(int hash, K key, V value, Node<K,V> next) {
+            this.hash = hash;
+            this.key = key;
+            this.value = value;
+            this.next = next;
+        }
+        public final K getKey()        { return key; }
+        public final V getValue()      { return value; }
+        public final String toString() { return key + "=" + value; }
+        // 重写hashCode()方法
+        public final int hashCode() {
+            return Objects.hashCode(key) ^ Objects.hashCode(value);
+        }
+
+        public final V setValue(V newValue) {
+            V oldValue = value;
+            value = newValue;
+            return oldValue;
+        }
+        // 重写 equals() 方法
+        public final boolean equals(Object o) {
+            if (o == this)
+                return true;
+            if (o instanceof Map.Entry) {
+                Map.Entry<?,?> e = (Map.Entry<?,?>)o;
+                if (Objects.equals(key, e.getKey()) &&
+                    Objects.equals(value, e.getValue()))
+                    return true;
+            }
+            return false;
+        }
+}
+```
+
+###### 树结点类源码
+
+```java
+static final class TreeNode<K,V> extends LinkedHashMap.Entry<K,V> {
+    TreeNode<K,V> parent;  // 父
+    TreeNode<K,V> left;    // 左
+    TreeNode<K,V> right;   // 右
+    TreeNode<K,V> prev;    // needed to unlink next upon deletion
+    boolean red;           // 判断颜色
+    TreeNode(int hash, K key, V val, Node<K,V> next) {
+        super(hash, key, val, next);
+    }
+    // 返回根节点
+    final TreeNode<K,V> root() {
+        for (TreeNode<K,V> r = this, p;;) {
+            if ((p = r.parent) == null)
+                return r;
+            r = p;
+        }
+    }
+}
+```
+
+#### 核心源码
+
+##### 构造方法
+
+
+
+
+
+##### `put()`
+
+##### `get()`
+
+##### `resize()`
+
+
+
+
 
 ### 14.7 `LinkedHashSet`&`LinkedHashMap`源码分析
 
