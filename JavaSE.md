@@ -3308,13 +3308,87 @@ final Node<K,V>[] resize() {
 
 ##### `put()`
 
+`put(K key, V value)`方法是将指定的`(key, value)`对添加到`map`里。该方法首先会对`map`做一次查找，看是否包含该元组，如果已经包含则直接返回；如果没有找到，则会通过`addEntry(int hash, K key, V value, int bucketIndex)`方法**插入**新的`entry`。
+
+注意，这里的**插入有两重含义**：
+
+- 从`table`的角度看，新的`entry`需要插入到对应的`bucket`里，当有哈希冲突时，采用头插法将新的`entry`插入到冲突链表的头部。
+- 从`header`的角度看，新的`entry`需要插入到双向链表的尾部。
+
+![put方法](JavaSE.assets/LinkedHashMap_addEntry.png)
+
+##### `remove()`
+
+`remove(Object key)`的作用是删除`key`值对应的`entry`，该方法的具体逻辑是在`removeEntryForKey(Object key)`里实现的。`removeEntryForKey()`方法会首先找到`key`值对应的`entry`，然后删除该`entry`(修改链表的相应引用)。
+
+注意，这里的**删除也有两重含义**：
+
+- 从`table`的角度看，需要将该`entry`从对应的`bucket`里删除，如果对应的冲突链表不空，需要修改冲突链表的相应引用。
+- 从`header`的角度来看，需要将该`entry`从双向链表中删除，同时修改链表中前面以及后面元素的相应引用。
+
+![remove方法](JavaSE.assets/LinkedHashMap_removeEntryForKey.png)
+
+### 14.8 `TreeSet`&`TreeMap`源码分析:airplane:
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/java/collection/java-map-TreeMap&TreeSet.html)
+
+#### 概述
+
+二者在Java里有着相同的实现，前者仅仅是对后者做了一层包装，也就是说**`TreeSet`里面有一个`TreeMap`（适配器模式）**。
+
+`TreeMap`实现了`SortedMap`接口，也就是说会按照`key`的大小顺序对元素进行排序，`key`大小的评判可以通过其本身的自然顺序（Natural Ordering），也可以通过构造时传入的比较器（Comparator）。
+
+**`TreeMap`底层通过红黑树（Red-Black tree）实现**，也就意味着`containsKey()`，`get()`，`put()`，`remove()`都有着`log(n)`的时间复杂度。
+
+![红黑树](JavaSE.assets/TreeMap_base.png)
+
+出于性能原因，TreeMap是非同步的（Not synchronized），如果需要在多线程环境使用，需要程序员手动同步；或者通过如下方式将TreeMap包装成同步的：`SortedMap m = Collections.synchronizedSortedMap(new TreeMap(...));`
+
+**红黑树是一种近似平衡的二叉查找树，它能够确保任何一个节点的左右子树的高度差不会超过二者中较低那个的一倍**。具体来说，红黑树是满足如下条件的二叉查找树（binary search tree）：
+
+- 每个节点要么是红色，要么是黑色。
+- 根节点必须是黑色。
+- 红色节点不能连续（红色节点的孩子和父亲都不能是红色）。
+- 对于每个节点，从该点至`null`的任何路径，都含有相同个数的黑色节点。
+
+在树的结构发生改变时（插入或者删除操作），往往会破坏上述条件3或条件4，需要通过调整使得查找树重新满足红黑树的约束条件。调整可以分为两类：一类是**颜色调整**，即改变某个节点的颜色；另一类是**结构调整**，即改变检索树的结构关系。结构调整过程包含两个基本操作：左旋（Rotate Left），右旋（RotateRight）。
+
+##### 左旋
+
+左旋的过程是将`x`的右子树绕`x`逆时针旋转，使得`x`的右子树成为`x`的父亲，同时修改相关节点的引用。旋转之后，二叉查找树的属性仍然满足。
+
+![左旋](JavaSE.assets/TreeMap_rotateLeft.png)
+
+##### 右旋
+
+右旋的过程是将`x`的左子树绕`x`顺时针旋转，使得`x`的左子树成为`x`的父亲，同时修改相关节点的引用。旋转之后，二叉查找树的属性仍然满足。
+
+![右旋](JavaSE.assets/TreeMap_rotateRight.png)
+
+##### 寻找后继结点
+
+对于一棵二叉查找树，给定节点`t`，其后继（树中大于`t`的最小元素）可以通过如下方式找到：
+
+- `t`的右子树不空，则`t`的后继是其右子树中最小的元素。
+- `t`的右孩子为空，则`t`的后继是其第一个向左走的祖先。
+
+![后继结点](JavaSE.assets/TreeMap_successor.png)
+
+#### 核心源码
+
+##### `get()`
+
+
+
+
+
+##### `put()`
+
+
+
 
 
 ##### `remove()`
 
 
-
-
-
-### 14.8 `TreeSet`&`TreeMap`源码分析
 
