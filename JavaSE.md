@@ -3378,17 +3378,18 @@ final Node<K,V>[] resize() {
 
 ##### `get()`
 
+`get(Object key)`方法根据指定的`key`值返回对应的`value`，该方法调用了`getEntry(Object key)`得到相应的`entry`，然后返回`entry.value`。因此`getEntry()`是算法的核心。算法思想是根据`key`的自然顺序（或者比较器顺序）对二叉查找树进行查找，直到找到满足`k.compareTo(p.key) == 0`的`entry`。
 
+![get方法](JavaSE.assets/TreeMap_getEntry.png)
 
+##### `put()`和`remove()`
 
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/java/collection/java-map-TreeMap&TreeSet.html#put)
+>
 
-##### `put()`
+### 14.9 ConcurrentHashMap源码分析:airplane:
 
+> 参考链接：[JavaGudie](https://javaguide.cn/java/collection/concurrent-hash-map-source-code.html)
 
-
-
-
-##### `remove()`
-
-
+### 14.10 总结（自己）:rocket:
 
