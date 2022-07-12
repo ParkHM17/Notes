@@ -3387,9 +3387,82 @@ final Node<K,V>[] resize() {
 > 参考链接：[Java全栈知识体系](https://pdai.tech/md/java/collection/java-map-TreeMap&TreeSet.html#put)
 >
 
-### 14.9 ConcurrentHashMap源码分析:airplane:
+### 14.9 ConcurrentHashMap源码分析:airplane:（toDo）
 
 > 参考链接：[JavaGudie](https://javaguide.cn/java/collection/concurrent-hash-map-source-code.html)
 
-### 14.10 总结（自己）:rocket:
+### 14.10 总结（自己）:rocket:（todo）
 
+### 14.11 常见问题:rocket:
+
+#### `List`、`Set`、`Queue`、`Map`的区别
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-01.html#%E8%AF%B4%E8%AF%B4-list-set-queue-map-%E5%9B%9B%E8%80%85%E7%9A%84%E5%8C%BA%E5%88%AB)
+
+- `List`（对付顺序的好帮手）：存储的元素是**有序可重复**的。
+- `Set`（注重独一无二的性质）：存储的元素是**无序不可重复**的。
+- `Queue`（实现排队功能的叫号机）：按特定的排队规则来确定先后顺序，存储的元素是**有序可重复**的。
+- `Map`（用`key`来搜索的专家）：使用键值对存储，**`key`是无序不可重复**的，**`value`是无序可重复**的，每个键最多映射到一个值。
+
+#### 无序性和不可重复性的含义
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-01.html#%E6%97%A0%E5%BA%8F%E6%80%A7%E5%92%8C%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E6%80%A7%E7%9A%84%E5%90%AB%E4%B9%89%E6%98%AF%E4%BB%80%E4%B9%88)
+
+无序性：无序性不等于随机性，无序性是指存储的数据在底层数组中**并非按照数组索引**的顺序添加 ，而是根据**数据的哈希值**决定的。
+
+不可重复性：不可重复性是指添加的元素按照`equals()`判断时返回`false`，需要同时重写`equals()`方法和`hashCode()`方法。
+
+#### `ArrayList`和`Vector`的区别
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-01.html#arraylist-%E5%92%8C-vector-%E7%9A%84%E5%8C%BA%E5%88%AB)
+
+- `ArrayList`是`List`的主要实现类，底层使用`Object[]`存储，适用于频繁地查找工作，**线程不安全**。
+- `Vector`是`List`的古老实现类，底层使用`Object[]`存储，**线程安全**。
+
+#### `ArrayList`和`LinkedList`的区别
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-01.html#arraylist-%E4%B8%8E-linkedlist-%E5%8C%BA%E5%88%AB)
+
+- `ArrayList`和`LinkedList`都是不同步的，也就是**不保证线程安全**。
+- `ArrayList`底层使用的是**`Object[]`**，`LinkedList`底层使用的是**双向链表**数据结构。
+
+- `ArrayList`采用数组存储，所以**插入和删除元素的时间复杂度受元素位置的影响**；`LinkedList`采用链表存储，所以如果是在**头尾插入或者删除元素不受元素位置的影响**。
+
+- `LinkedList`不支持高效的随机元素访问，而`ArrayList`支持。
+- `ArrayList`的空间浪费主要体现在在列表的结尾会预留一定的容量空间，而`LinkedList`的空间花费则体现在它的每一个元素都需要消耗比`ArrayList`更多的空间。
+
+#### `HashSet`、`LinkedHashSet`、`TreeSet`的区别
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-01.html#%E6%AF%94%E8%BE%83-hashset%E3%80%81linkedhashset-%E5%92%8C-treeset-%E4%B8%89%E8%80%85%E7%9A%84%E5%BC%82%E5%90%8C)
+
+- `HashSet`、`LinkedHashSet`和`TreeSet`都是`Set`接口的实现类，都能保证元素**唯一**，并且都**不是线程安全**的。
+- `HashSet`的底层数据结构是哈希表（基于`HashMap`实现）；`LinkedHashSet`的底层数据结构是链表和哈希表；`TreeSet` 底层数据结构是红黑树，元素是有序的，排序的方式有自然排序和定制排序。
+- `HashSet`用于不需要保证元素插入和取出顺序的场景；`LinkedHashSet`用于保证元素的插入和取出顺序满足FIFO的场景；`TreeSet`用于支持对元素自定义排序规则的场景。
+
+#### `ArrayDeque`和`LinkedList`的区别
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-01.html#arraydeque-%E4%B8%8E-linkedlist-%E7%9A%84%E5%8C%BA%E5%88%AB)
+
+- `ArrayDeque`和`LinkedList`都实现了`Deque` 接口，两者都具有队列的功能。
+- `ArrayDeque`是基于可变长的数组和双指针来实现，而`LinkedList`则通过链表来实现。
+- `ArrayDeque`不支持存储`NULL`数据，但`LinkedList`支持。
+
+- `ArrayDeque`插入时可能存在扩容过程，不过均摊后的插入操作依然为 O(1)。虽然`LinkedList`不需要扩容，但是每次插入数据时均需要申请新的堆空间，均摊性能相比更慢。
+
+从性能的角度上，选用`ArrayDeque`来实现队列要比`LinkedList`更好。此外，`ArrayDeque`也可以用于实现栈。
+
+#### `HashMap`和`HashTable`的区别
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-02.html#hashmap-%E5%92%8C-hashtable-%E7%9A%84%E5%8C%BA%E5%88%AB)
+
+- `HashMap`是非线程安全的，`Hashtable`是线程安全的。
+
+- `HashMap`要比`Hashtable`效率高一点。
+
+- `HashMap`可以存储`null`的`key`和`value`，但`null`作为键只能有一个，`null`作为值可以有多个；`Hashtable`不允许有`null`键和`null`值，否则会抛出`NullPointerException`。
+
+- 创建时如果不指定容量初始值，`Hashtable`默认的初始大小为11，之后每次扩充，容量变为原来的$2n+1$；`HashMap`默认的初始化大小为16，之后每次扩充都变为原来的2倍。
+
+  创建时如果给定了容量初始值，那么`Hashtable`会直接使用给定的大小，而`HashMap`会将其扩充为2的幂次方大小，也就是说`HashMap`总是使用2的幂作为哈希表的大小。
+
+- JDK1.8 以后的`HashMap`在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为8）（将链表转换成红黑树前会判断，如果当前数组的长度小于64，那么会选择先进行数组扩容，而不是转换为红黑树）时，将链表转化为红黑树，以减少搜索时间。`Hashtable`没有这样的机制。
