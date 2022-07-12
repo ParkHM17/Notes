@@ -3455,14 +3455,52 @@ final Node<K,V>[] resize() {
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-02.html#hashmap-%E5%92%8C-hashtable-%E7%9A%84%E5%8C%BA%E5%88%AB)
 
-- `HashMap`是非线程安全的，`Hashtable`是线程安全的。
+- `HashMap`是非线程安全的，`HashTable`是线程安全的。
 
-- `HashMap`要比`Hashtable`效率高一点。
+- `HashMap`要比`HashTable`效率高一点。
 
-- `HashMap`可以存储`null`的`key`和`value`，但`null`作为键只能有一个，`null`作为值可以有多个；`Hashtable`不允许有`null`键和`null`值，否则会抛出`NullPointerException`。
+- `HashMap`可以存储`null`的`key`和`value`，但`null`作为键只能有一个，`null`作为值可以有多个；`HashTable`不允许有`null`键和`null`值，否则会抛出`NullPointerException`。
 
-- 创建时如果不指定容量初始值，`Hashtable`默认的初始大小为11，之后每次扩充，容量变为原来的$2n+1$；`HashMap`默认的初始化大小为16，之后每次扩充都变为原来的2倍。
+- 创建时如果不指定容量初始值，`HashTable`默认的初始大小为11，之后每次扩充，容量变为原来的$2n+1$；`HashMap`默认的初始化大小为16，之后每次扩充都变为原来的2倍。
 
-  创建时如果给定了容量初始值，那么`Hashtable`会直接使用给定的大小，而`HashMap`**会将其“扩充”为2的幂次方大小，也就是说`HashMap`总是使用2的幂作为哈希表的大小**。
+  创建时如果给定了容量初始值，那么`HashTable`会直接使用给定的大小，而`HashMap`**会将其“扩充”为2的幂次方大小，也就是说`HashMap`总是使用2的幂作为哈希表的大小**。
 
-- JDK1.8 以后的`HashMap`在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为8）（将链表转换成红黑树前会判断，如果当前数组的长度小于64，那么会选择先进行数组扩容，而不是转换为红黑树）时，将链表转化为红黑树，以减少搜索时间。`Hashtable`没有这样的机制。
+- JDK1.8 以后的`HashMap`在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为8）（将链表转换成红黑树前会判断，如果当前数组的长度小于64，那么会选择先进行数组扩容，而不是转换为红黑树）时，将链表转化为红黑树，以减少搜索时间。`HashTable`没有这样的机制。
+
+#### `ConcurrentHashMap`和`HashTable`的区别
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-02.html#concurrenthashmap-%E5%92%8C-hashtable-%E7%9A%84%E5%8C%BA%E5%88%AB)
+
+`ConcurrentHashMap`和`HashTable`的区别主要体现在实现线程安全的方式上不同：
+
+- JDK 1.7的`ConcurrentHashMap`底层采用**分段的数组+链表**实现，JDK 1.8采用的数据结构跟`HashMap 1.8`的结构一样：数组+链表/红黑树；`Hashtable`和JDK 1.8之前的`HashMap`的底层数据结构类似都是采用**数组+链表**的形式，数组是`HashMap`的主体，链表则是主要为了解决哈希冲突而存在的。
+
+- ①**在JDK 1.7中**，`ConcurrentHashMap`（分段锁）对整个桶数组进行了分割分段（`Segment`），每一把锁只锁容器其中一部分数据，多线程访问容器里不同数据段的数据，就不会存在锁竞争，提高并发访问率。**到了JDK 1.8的时候已经摒弃了`Segment`的概念，而是直接用`Node`数组+链表+红黑树的数据结构来实现，并发控制使用`synchronized`和CAS来操作。整个看起来就像是优化过且线程安全的`HashMap`，虽然在 JDK 1.8 中还能看到`Segment`的数据结构，但是已经简化了属性，只是为了兼容旧版本；**
+
+  ②**`Hashtable`（同一把锁）**使用`synchronized`来保证线程安全，效率非常低下。当一个线程访问同步方法时，其他线程也访问同步方法，可能会进入阻塞或轮询状态。
+
+`HashTable`：
+
+![HashTable](JavaSE.assets/HashTable全表锁.png)
+
+JDK 1.7的`ConcurrentHashMap`：
+
+![JDK 1.7CHashMap](JavaSE.assets/java7_concurrenthashmap.49a48864.png)
+
+JDK 1.8的`ConcurrentHashMap`：
+
+![JDK 1.8CHashMap](JavaSE.assets/java8_concurrenthashmap.c9951bb5.png)
+
+#### `ConcurrentHashMap`的线程安全的具体实现方式/底层具体实现
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-02.html#concurrenthashmap-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F-%E5%BA%95%E5%B1%82%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0)
+
+##### JDK 1.7
+
+首先将数据分为一段一段地存储形式，然后给每一段数据配一把锁，当一个线程占用锁访问其中一个段数据时，其他段的数据也能被其他线程访问。**`ConcurrentHashMap`是由`Segment[]`结构和`HashEntry[]`结构组成**。`Segment`继承了`ReentrantLock`，所以`Segment`是一种可重入锁，`HashEntry`用于存储键值对数据。
+
+一个`ConcurrentHashMap`里包含一个`Segment`数组，一个`Segment`包含一个`HashEntry`数组，其中每个`HashEntry`是一个链表结构的元素，每个`Segment`守护着一个`HashEntry`数组里的元素，当对`HashEntry`数组的数据进行修改时，必须首先获得对应的`Segment`的锁。
+
+##### JDK 1.8
+
+`ConcurrentHashMap`取消了`Segment`分段锁，采用CAS和`synchronized`来保证并发安全。在链表长度超过一定阈值（8）时将链表转换为红黑树。`synchronized`只锁定当前链表或红黑二叉树的首节点，这样只要不产生哈希冲突，就不会产生并发，效率提升。
