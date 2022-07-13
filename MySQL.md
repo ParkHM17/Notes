@@ -1109,10 +1109,10 @@ update tb_student A set A.age='19' where A.name=' 张三 ';
 
 ### 10.3 总结
 
-- MySQL主要分为Server 层和引擎层，Server层主要包括连接器、查询缓存、分析器、优化器、执行器，同时还有一个日志模块（Binlog），这个日志模块所有执行引擎都可以共用，Redo log只是InnoDB引擎独有。
+- MySQL主要分为Server层和引擎层，Server层主要包括连接器、查询缓存、分析器、优化器、执行器，同时还有一个日志模块（Binlog），这个日志模块所有执行引擎都可以共用，Redo log只是InnoDB引擎独有。
 - 引擎层是插件式的，目前主要包括：MyISAM、InnoDB、Memory等。
 - 查询语句的执行流程如下：权限校验（如果命中缓存）--->查询缓存--->分析器--->优化器--->权限校验--->执行器--->引擎。
-- 更新语句执行流程如下：分析器---->权限校验---->执行器--->引擎---Redo log（prepare状态）--->Binlog--->Redo log（commit状态）
+- 更新语句执行流程如下：分析器---->权限校验---->执行器--->引擎---Redo log（`prepare`状态）--->Binlog--->Redo log（`commit`状态）
 
 ## 十一、数据库设计三范式:boat:
 
