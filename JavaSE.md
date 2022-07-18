@@ -275,25 +275,10 @@ int n = i;   //拆箱
 
 #### `==`和`equals()`的区别
 
-**`==`**对于基本类型和引用类型的作用效果是不同的：
-
-- 对于基本数据类型来说，`==`比较的是**值**。
-- 对于引用数据类型来说，`==`比较的是对象的**内存地址**。
-
-注意：因为Java只有值传递，所以对于`==`来说，不管是比较基本数据类型，还是引用数据类型的变量，其本质比较的都是值，只是**引用类型变量存的值是对象的地址**。
-
-**`equals()`**不能用于判断基本数据类型的变量，只能用来判断两个对象是否相等。`equals()`方法存在于`Object`类中，而`Object`类是所有类的直接或间接父类，因此所有的类都有`equals()`方法。
-
-```java
-public boolean equals(Object obj) {
-     return (this == obj);
-}
-```
-
-`equals()`方法存在两种使用情况：
-
-- **类没有重写`equals()`方法**：通过`equals()`比较该类的两个对象时，使用的是`Object`类`equals()`方法，等价于通过`==`比较这两个对象。
-- **类重写了`equals()`方法**：一般会重写`equals()`方法来比较两个对象中的**属性是否相等**；若它们的属性相等，则认为这两个对象相等。
+|              |       `==`       |                          `equals()`                          |
+| :----------: | :--------------: | :----------------------------------------------------------: |
+| 基本数据类型 |    比较**值**    |                             :x:                              |
+| 引用数据类型 | 比较**内存地址** | 没有重写：使用的是父类Object的`equals()`方法，等价于`==`<br />重写：重写`equals()`方法来比较两个对象中的**属性是否相等** |
 
 举例说明：
 
@@ -348,7 +333,7 @@ public boolean equals(Object anObject) {
 
 以HashSet如何检查重复为例子来说明为什么要有`hashCode()`。
 
-当把对象加入HashSet时，HashSet会先通过`hashCode()`计算对象的哈希码来**判断对象加入的位置**，同时也会与其他已经加入的对象的哈希码比较；如果没有相符的哈希码，**会假设对象没有重复出现**；如果发现有相同哈希码的对象，这时会调用`equals()`方法来检查相等的对象**是否真的相同**。如果两者相同，HashSet就不会让其加入；如果不同的话，就会重新散列到其他位置。这样就大大减少了`.equals()`的次数，相应地也大大提高了执行速度。
+当把对象加入HashSet时，HashSet会先通过`hashCode()`计算对象的哈希码来**判断对象加入的位置**，同时也会与其他已经加入的对象的哈希码比较；如果没有相符的哈希码，**会假设对象没有重复出现**；如果发现有相同哈希码的对象，这时会调用`equals()`方法来检查相等的对象**是否真的相同**。如果两者相同，HashSet就不会让其加入；如果不同的话，就会重新散列到其他位置。这样就大大减少了`equals()`的次数，相应地也大大提高了执行速度。
 
 从上面可以看出，`hashCode()`和`equals()`都是用于比较两个对象是否相等。**那为什么JDK还要同时提供这两个方法呢**？
 
@@ -364,47 +349,20 @@ public boolean equals(Object anObject) {
 
 因为两个相等对象的哈希码必然相等，也就是说如果`equals()`方法判断两个对象是相等的，那这两个对象的`hashCode()`值也要相等。如果只重写`equals()`却没有重写`hashCode()`，可能会导致`equals()`判断是相等的两个对象，但它们的哈希值并不相等。
 
-### 5.2 String:rocket:
+### 5.2 `String`:rocket:
 
-#### String、StringBuffer、StringBuilder的区别？
+#### `String`、`StringBuffer`、`StringBuilder`的区别？
 
-##### 可变性
+|            |               `String`               | `StringBuilder` |                        `StringBuffer`                        |
+| :--------: | :----------------------------------: | :-------------: | :----------------------------------------------------------: |
+|   可变性   |                 :x:                  |       :o:       |                             :o:                              |
+| 线程安全性 |                 :o:                  |       :x:       | :o:（加了**同步锁**或者对调用的方法加了同步锁，`synchronized`） |
+|    性能    | 每次改变都会生成一个新的`String`对象 | 对本身进行操作  |                        对本身进行操作                        |
+|  适用范围  |            操作少量的数据            |     单线程      |                            多线程                            |
 
-`String`是**不可变**的。`StringBuilder`与`StringBuffer`都继承自`AbstractStringBuilder`类，在`AbstractStringBuilder`中也是**使用字符数组保存字符串**，不过没有使用`final`和`private`关键字修饰，最关键的是`AbstractStringBuilder`类还提供了很多修改字符串的方法，比如`append()`方法。
+#### `String`为什么不可变？
 
-```java
-abstract class AbstractStringBuilder implements Appendable, CharSequence {
-    char[] value;
-    public AbstractStringBuilder append(String str) {
-        if (str == null)
-            return appendNull();
-        int len = str.length();
-        ensureCapacityInternal(count + len);
-        str.getChars(0, len, value, count);
-        count += len;
-        return this;
-    }
-  	//...
-}
-```
-
-##### 线程安全性
-
-`String`中的对象是不可变的，也就可以理解为常量，**线程安全**。`AbstractStringBuilder`是`StringBuilder`与`StringBuffer`的公共父类，定义了一些字符串的基本操作。`StringBuffer`对方法加了同步锁或者对调用的方法加了同步锁，所以是**线程安全**的；`StringBuilder`并没有对方法进行加同步锁，所以是**非线程安全**的。
-
-##### 性能
-
-每次对`String`类型进行改变的时候，都会生成一个新的`String`对象，然后将指针指向新的`String`对象。`StringBuffer`每次都会对`StringBuffer`对象本身进行操作，而不是生成新的对象并改变对象引用。相同情况下使用`StringBuilder`相比使用`StringBuffer`仅能获得10%~15%左右的性能提升，但却要冒多线程不安全的风险。
-
-##### 总结
-
-- 操作少量的数据：使用`String`。
-- 单线程操作字符串缓冲区下操作大量数据：使用`StringBuilder`。
-- 多线程操作字符串缓冲区下操作大量数据：使用`StringBuffer`。
-
-#### String为什么不可变？
-
-`String`类中使用`final`关键字修饰字符数组来保存字符串：
+`String`类中使用`final`关键字修饰字符数组来保存字符串（被`final`关键字修饰的**类不能被继承**，修饰的**方法不能被重写**，修饰的变量是**基本数据类型则值不能改变**，修饰的变量是**引用数据类型则不能再指向其他对象**）。但是，**`final`关键字修饰的数组保存字符串并不是`String`不可变的根本原因**，因为这个数组保存的字符串是可变的（`final`修饰引用类型变量的情况）。
 
 ```java
 public final class String implements java.io.Serializable, Comparable<String>, CharSequence {
@@ -413,16 +371,14 @@ public final class String implements java.io.Serializable, Comparable<String>, C
 }
 ```
 
-被`final`关键字修饰的类不能被继承，修饰的方法不能被重写，修饰的变量是基本数据类型则值不能改变，修饰的变量是引用类型则不能再指向其他对象。因此，`final`关键字修饰的数组保存字符串并不是`String`不可变的根本原因，因为这个数组保存的字符串是可变的（`final`修饰引用类型变量的情况）。
-
 `String`真正不可变的原因：
 
-- 保存字符串的数组被`final`修饰且为私有的，并且`String`类没有提供/暴露修改这个字符串的方法。
+- 保存字符串的数组还被`private`修饰，而且`String`类没有提供/暴露修改这个字符串的方法。
 - `String`类被`final`修饰导致其不能被继承，进而避免了子类破坏`String`不可变。
 
-#### 字符串拼接使用`+`还是StringBuilder？
+#### 字符串拼接使用`+`还是`StringBuilder`？
 
-Java语言本身并不支持运算符重载，`+`和`+=`是专门为String类重载过的运算符，也是Java中仅有的两个重载过的元素符。
+Java语言本身并不支持运算符重载，`+`和`+=`是专门为`String`类重载过的运算符，也是Java中仅有的两个重载过的元素符。
 
 ```java
 String str1 = "he";
@@ -435,7 +391,7 @@ String str4 = str1 + str2 + str3;
 
 ![字节码文件](JavaSE.assets/image-20220422161637929.png)
 
-可以看出，字符串对象使用`+`的拼接方式，实际上是通过`StringBuilder`调用`append()`方法实现的，拼接完成之后调用`toString()`得到一个`String`对象 。不过，在循环内使用`+`进行字符串拼接的话，存在比较明显的缺陷：**编译器不会创建单个`StringBuilder`以复用，会导致创建过多的`StringBuilder`对象**。
+可以看出，字符串对象使用`+`的拼接方式，实际上是通过`StringBuilder`调用`append()`方法实现的，拼接完成之后调用`toString()`得到一个`String`对象 。不过，在循环内使用`+`进行字符串拼接的话，存在比较明显的缺陷：**编译器会导致创建过多的`StringBuilder`对象，而不会创建单个以复用**。
 
 ```java
 String[] arr = {"he", "llo", "world"};
@@ -450,7 +406,7 @@ System.out.println(s);
 
 #### 字符串常量池的作用？
 
-**字符串常量池**是JVM为了**提升性能和减少内存**消耗针对字符串（String 类）专门开辟的一块区域，主要目的是为了避免字符串的重复创建。
+**字符串常量池**是JVM为了**提升性能和减少内存**消耗针对字符串（`String`类）专门开辟的一块区域，主要目的是为了避免字符串的重复创建。
 
 ```java
 // 在堆中创建字符串对象”ab“
@@ -486,7 +442,7 @@ System.out.println(s3 == s4); // false
 System.out.println(s1 == s4); //true
 ```
 
-#### String类型的变量和常量做`+`运算时发生了什么？
+#### `String`类型的变量和常量做`+`运算时发生了什么？
 
 先来看字符串不加`final`关键字拼接的情况：
 
@@ -692,7 +648,7 @@ printArray(stringArray);
 
 ### 8.1 何为反射？
 
-反射之所以被称为框架的灵魂，主要是因为它拥有**在运行时分析类以及执行类中方法的能力**。通过反射可以获取任意一个类的所有属性和方法并且加以调用。
+反射之所以被称为框架的灵魂，主要是因为它拥有**在运行时分析类以及执行类中方法的能力**。通过反射**可以获取任意一个类的所有属性和方法**并且加以调用。
 
 ### 8.2 反射机制优缺点
 
@@ -729,9 +685,9 @@ public class DebugInvocationHandler implements InvocationHandler {
 
 ### 8.4 反射演示
 
-#### 获取Class对象的四种方式
+#### 获取`Class`对象的四种方式
 
-Java提供了四种方式获取Class对象：
+Java提供了四种方式获取`Class`对象：
 
 ##### 知道具体类的情况下
 
@@ -739,28 +695,28 @@ Java提供了四种方式获取Class对象：
 Class alunbarClass = TargetObject.class;
 ```
 
-但是一般是不知道具体类的，基本都是通过遍历包下面的类来获取Class对象，通过此方式获取Class对象不会进行初始化。
+但是一般是不知道具体类的，基本都是通过遍历包下面的类来获取`Class`对象，通过此方式获取`Class`对象不会进行初始化。
 
-##### 通过Class.forName()传入类的全路径获取
+##### 通过`Class.forName()`传入类的全路径获取
 
 ```java
 Class alunbarClass1 = Class.forName("cn.javaguide.TargetObject");
 ```
 
-##### 通过对象实例instance.getClass()获取
+##### 通过对象实例`instance.getClass()`获取
 
 ```java
 TargetObject o = new TargetObject();
 Class alunbarClass2 = o.getClass();
 ```
 
-##### 通过类加载器xxxClassLoader.loadClass()传入类路径获取
+##### 通过类加载器`xxxClassLoader.loadClass()`传入类路径获取
 
 ```java
 ClassLoader.getSystemClassLoader().loadClass("cn.javaguide.TargetObject");
 ```
 
-通过类加载器获取Class对象不会进行初始化，意味着不进行包括初始化等一系列步骤，静态代码块和静态对象不会得到执行。
+通过类加载器获取`Class`对象**不会进行初始化**，意味着不进行包括初始化等一系列步骤，静态代码块和静态对象不会得到执行。
 
 ## 九、注解
 
@@ -798,7 +754,7 @@ public interface Override extends Annotation{
 
 很多程序设计语言（比如C++、 Pascal）提供了两种参数传递的方式，但是在Java中只有值传递。
 
-### 10.2 为什么Java中只有值传递？:airplane:
+### 10.2 为什么Java中只有值传递？:boat:
 
 #### 传递基本类型参数
 
@@ -907,7 +863,7 @@ Java中将实参传递给方法的方式是**值传递**：
 - **序列化**：将**数据结构或对象转换成二进制字节流**的过程。
 - **反序列化**：将**二进制字节流转换成数据结构或者对象**的过程。
 
-对于Java这种面向对象编程语言来说，序列化的都是对象（Object），也就是实例化后的类（Class），但是在C++这种半面向对象的语言中，struct（结构体）定义的是数据结构类型，而class对应的是对象类型。
+对于Java这种面向对象编程语言来说，序列化的都是对象（`Object`），也就是实例化后的类（`Class`），但是在C++这种半面向对象的语言中，`struct`（结构体）定义的是数据结构类型，而`class`对应的是对象类型。
 
 序列化的主要目的是**通过网络传输对象或者说是将对象存储到文件系统、数据库、内存中。**
 
@@ -929,61 +885,19 @@ OSI七层协议模型中的应用层、表示层和会话层对应的都是TCP/I
 
 - `transient`**只能修饰变量**，不能修饰类和方法。
 - `transient`修饰的变量，在反序列化后变量值将会被置成类型的默认值。例如，如果是修饰`int`类型，那么反序列后结果就是`0`。
-- `static`变量因为不属于任何对象（Object），所以无论有没有`transient`关键字修饰，均不会被序列化。
+- `static`变量因为不属于任何对象（`Object`），所以无论有没有`transient`关键字修饰，均不会被序列化。
 
 ### 11.4 常见序列化协议
 
-JDK自带的序列化方式一般不会用 ，因为序列化效率低并且部分版本有安全漏洞。比较常用的序列化协议有hessian、kyro、protostuff。
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/serialization.html#%E5%B8%B8%E8%A7%81%E5%BA%8F%E5%88%97%E5%8C%96%E5%8D%8F%E8%AE%AE%E5%AF%B9%E6%AF%94)
+
+JDK自带的序列化方式一般不会用，**因为序列化效率低并且部分版本有安全漏洞**。比较常用的序列化协议有hessian、kyro、protostuff。
 
 下面提到的都是基于二进制的序列化协议，像JSON和XML这种属于文本类序列化方式。虽然JSON和XML可读性比较好，但是性能较差，一般不会选择。
-
-#### JDK自带的序列化方式
-
-JDK自带的序列化，只需实现`java.io.Serializable`接口即可。
-
-```java
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Builder
-@ToString
-public class RpcRequest implements Serializable {
-    private static final long serialVersionUID = 1905122041950251207L;
-    private String requestId;
-    private String interfaceName;
-    private String methodName;
-    private Object[] parameters;
-    private Class<?>[] paramTypes;
-    private RpcMessageTypeEnum rpcMessageTypeEnum;
-}
-```
-
-很少或者说几乎不会直接使用这个序列化方式，主要原因有两个：
-
-- **不支持跨语言调用**：如果调用的是其他语言开发的服务的时候就不支持了。
-- **性能差**：相比于其他序列化框架**性能更低**，主要原因是序列化之后的字节数组体积较大，导致传输成本加大。
-
-#### Kyro
-
-Kryo是一个高性能的序列化/反序列化工具，由于其变长存储特性并使用了字节码生成机制，拥有较高的运行速度和较小的字节码体积。
-
-#### Protobuf
-
-Protobuf出自于Google，性能比较优秀，也支持多种语言，同时还是跨平台的。就是在使用中过于繁琐，因为需要自己定义`IDL`文件和生成对应的序列化代码。这样虽然不然灵活，但是另一方面保证了protobuf没有序列化漏洞的风险。
-
-#### ProtoStuff
-
-protostuff基于Google的protobuf，但是提供了更多的功能和更简易的用法。虽然更加易用，但是不代表ProtoStuff性能更差。
-
-#### hessian
-
-hessian是一个轻量级的,自定义描述的二进制RPC协议。hessian是一个比较老的序列化，并且同样也是跨语言的。
 
 ## 十二、代理模式
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/basis/proxy.html)
-
-### 12.1 代理模式
 
 代理模式是一种比较好理解的设计模式。简单来说就是**使用代理对象来代替对真实对象的访问**，这样就可以在不修改原目标对象的前提下，提供额外的功能操作，扩展目标对象的功能。
 
@@ -991,7 +905,7 @@ hessian是一个轻量级的,自定义描述的二进制RPC协议。hessian是�
 
 代理模式有静态代理和动态代理两种实现方式。
 
-### 12.2 静态代理
+### 12.1 静态代理
 
 静态代理中，对目标对象的每个方法的增强都是手动完成的，非常不灵活（比如接口一旦新增加方法，目标对象和代理对象都要进行修改）且麻烦（需要对每个目标类都单独写一个代理类）。
 
@@ -1284,30 +1198,49 @@ aliSmsService.send("java");
 - **灵活性**：动态代理更加灵活，不需要必须实现接口，可以直接代理实现类（CGLIB动态代理），并且可以不需要针对每个目标类都创建一个代理类。另外，静态代理中，接口一旦新增加方法，目标对象和代理对象都要进行修改，这是非常麻烦的。
 - **JVM层面**：**静态代理在编译时**就将接口、实现类、代理类这些都变成了一个个实际的`.class`文件；而**动态代理是在运行时**动态生成类字节码，并加载到JVM中。
 
-## 十三、I/O模型
+## 十三、I/O
 
-> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/io.html)、[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#i-o)
+### 13.1 I/O流简介
 
-### 13.1 何为I/O？
+> 参考链接：[JavaGuide](https://javaguide.cn/java/io/io-basis.html)
+
+I/O即`Input/Output`。数据输入到计算机内存的过程即输入，反之输出到外部存储（比如数据库，文件，远程主机）的过程即输出。数据传输过程类似于水流，因此称为I/O流。I/O流在Java中分为输入流和输出流，而根据数据的处理方式又分为**字节流**和**字符流**。
+
+Java I/O流的40多个类都是从如下4个抽象类基类中派生出来的。
+
+- `InputStream`/`Reader`：所有输入流的基类，前者是字节输入流，后者是字符输入流。
+
+- `OutputStream`/`Writer`：所有输出流的基类，前者是字节输出流，后者是字符输出流。
+
+|          |                  `InputStream`                   |                     `Reader`                     |                `OutputStream`                |                   `Writer`                   |
+| :------: | :----------------------------------------------: | :----------------------------------------------: | :------------------------------------------: | :------------------------------------------: |
+|   概述   | 从源头（通常是文件）读取数据（字节信息）到内存中 | 从源头（通常是文件）读取数据（字符信息）到内存中 | 将数据（字节信息）写入到目的地（通常是文件） | 将数据（字符信息）写入到目的地（通常是文件） |
+| 常用方法 |      `read()`：返回输入流中下一个字节的数据      |          `read()`：从输入流读取一个字符          |     `write(int b)`：将特定字节写入输出流     |         `write(int c)`：写入单个字符         |
+
+#### 有了字节流为什么还要有字符流？
+
+**不管是文件读写还是网络发送接收，信息的最小存储单元都是字节，那为什么I/O流操作要分为字节流操作和字符流操作呢**？
+
+字符流是由Java虚拟机将字节转换得到的，问题就出在**这个过程还算是非常耗时**，并且，如果不知道编码类型就很容易出现乱码问题。
+
+所以，I/O流就提供了一个直接操作字符的接口，方便平时对字符进行流操作。如果音频文件、图片等**媒体文件用字节流比较好**，如果涉及到字符的话使用字符流比较好。
+
+### 13.2 何为I/O？
 
 从计算机结构的视角来看，I/O描述了**计算机系统与外部设备之间通信的过程**。
 
-根据操作系统相关知识：为了保证操作系统的稳定性和安全性，一个进程的地址空间划分为**用户空间（User space）**和**内核空间（Kernel space ）**。平常运行的应用程序都是在用户空间，只有内核空间才能进行系统态级别的资源有关的操作，并且用户空间的程序不能直接访问内核空间。
+根据操作系统相关知识：为了保证操作系统的稳定性和安全性，一个进程的地址空间划分为**用户空间（User space）**和**内核空间（Kernel space）**。平常运行的应用程序都是在用户空间，只有内核空间才能进行系统态级别的资源有关的操作，并且用户空间的程序不能直接访问内核空间。
 
 当想要执行I/O操作时，由于没有执行这些操作的权限，只能发起**系统调用**请求操作系统帮忙完成。在平常开发过程中接触最多的就是**磁盘IO（读写文件）**和**网络IO（网络请求和响应）**。
 
 当应用程序发起I/O调用后，会经历两个步骤：
 
-1. 内核等待I/O设备准备好数据。
+1. 内核等待I/O设备准备好数据；
 2. 内核将数据从内核空间拷贝到用户空间。
-
-### 13.2 有哪些常见的I/O模型？
-
-UNIX系统下，I/O模型一共有5种：**同步阻塞 I/O**、**同步非阻塞I/O**、**I/O多路复用**、**信号驱动I/O**和**异步I/O**。
 
 ### 13.3 Java中常见的3种I/O模型:airplane:
 
-#### BIO(Blocking I/O)
+#### BIO（Blocking I/O）
 
 **BIO属于同步阻塞I/O模型** 。同步阻塞IO模型中，应用程序发起`read`调用后，会一直阻塞，**直到内核把数据拷贝到用户空间**。
 
@@ -1315,9 +1248,9 @@ UNIX系统下，I/O模型一共有5种：**同步阻塞 I/O**、**同步非阻�
 
 在客户端连接数量不高的情况下是没问题的。但是当面对十万甚至百万级连接的时候，传统的BIO模型是无能为力的。因此需要一种更高效的I/O处理模型来应对更高的并发量。
 
-#### NIO(Non-blocking I/O)
+#### NIO（Non-blocking I/O）
 
-Java中的NIO对应`java.nio`包，提供了`Channel`，`Selector`，`Buffer`等抽象类。NIO中的N可以理解为Non-blocking，不单纯是New。它是**支持面向缓冲**的、基于通道的I/O操作方法。对于高负载、高并发的（网络）应用，应使用 NIO。
+Java中的NIO对应`java.nio`包，提供了`Channel`，`Selector`，`Buffer`等抽象类。NIO中的N可以理解为Non-blocking，不单纯是New。它是**支持面向缓冲**的、基于通道的I/O操作方法。对于高负载、高并发的（网络）应用，应使用NIO。
 
 Java中的NIO可以看作是**I/O多路复用模型**。也有很多人认为，Java中的NIO属于**同步非阻塞I/O模型**。
 
@@ -1325,7 +1258,7 @@ Java中的NIO可以看作是**I/O多路复用模型**。也有很多人认为，
 
 同步非阻塞I/O模型中，应用程序会一直发起`read`调用，等待数据从内核空间拷贝到用户空间的这段时间里，线程依然是阻塞的，直到在内核把数据拷贝到用户空间。相比于同步阻塞I/O模型，同步非阻塞I/O模型确实有了很大改进：**通过轮询操作，避免了一直阻塞**。
 
-但是，这种I/O模型同样存在问题：**应用程序不断进行系统调用的过程（轮询）是十分消耗 CPU 资源的。**这个时候，**I/O多路复用模型**就上场了。
+但是，这种I/O模型同样存在问题：**应用程序不断进行系统调用的过程（轮询）是十分消耗CPU资源的**。这个时候，**I/O多路复用模型**就上场了。
 
 ![I/O多路复用](JavaSE.assets/微信截图_20220705105713.png)
 
@@ -1342,25 +1275,6 @@ AIO也就是NIO 2，属于异步I/O模型。异步I/O是**基于事件和回调�
 #### 总结
 
 ![总结](JavaSE.assets/33b193457c928ae02217480f994814b6.png)
-
-### 13.4 I/O流分几种？
-
-- 按照流的**流向**分，可以分为输入流和输出流。
-- 按照**操作单元**划分，可以划分为字节流和字符流。
-- 按照流的**角色**划分，可以划分为节点流和处理流。
-
-Java I/O流共涉及40多个类，都是从如下4个抽象类基类中派生出来的：
-
-- InputStream/Reader：所有的输入流的基类，前者是字节输入流，后者是字符输入流。
-- OutputStream/Writer：所有输出流的基类，前者是字节输出流，后者是字符输出流。
-
-### 13.5 有了字节流为什么还要有字符流？
-
-**不管是文件读写还是网络发送接收，信息的最小存储单元都是字节，那为什么I/O流操作要分为字节流操作和字符流操作呢**？
-
-字符流是由Java虚拟机将字节转换得到的，问题就出在**这个过程还算是非常耗时**，并且，如果不知道编码类型就很容易出现乱码问题。
-
-所以，I/O流就提供了一个直接操作字符的接口，方便平时对字符进行流操作。如果音频文件、图片等**媒体文件用字节流比较好**，如果涉及到字符的话使用字符流比较好。
 
 ## 十四、Java集合
 
@@ -1393,12 +1307,6 @@ Java泛型只是编译器提供的语法糖，所以这里的数组是一个Obje
 #### 核心源码
 
 ```java
-package java.util;
-
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
-
 
 public class ArrayList<E> extends AbstractList<E>
     implements List<E>, RandomAccess, Cloneable, java.io.Serializable {
@@ -1528,287 +1436,7 @@ public class ArrayList<E> extends AbstractList<E>
             Integer.MAX_VALUE :
         MAX_ARRAY_SIZE;
     }
-
-    // 返回此列表中的元素数
-    public int size() {
-        return size;
-    }
-
-    // 如果此列表不包含元素，则返回 true
-    public boolean isEmpty() {
-        //注意=和==的区别
-        return size == 0;
-    }
-
-    // 如果此列表包含指定的元素，则返回true
-    public boolean contains(Object o) {
-        //indexOf()方法：返回此列表中指定元素的首次出现的索引，如果此列表不包含此元素，则为-1
-        return indexOf(o) >= 0;
-    }
-
-    // 返回此列表中指定元素的首次出现的索引，如果此列表不包含此元素，则为-1
-    public int indexOf(Object o) {
-        if (o == null) {
-            for (int i = 0; i < size; i++)
-                if (elementData[i]==null)
-                    return i;
-        } else {
-            for (int i = 0; i < size; i++)
-                //equals()方法比较
-                if (o.equals(elementData[i]))
-                    return i;
-        }
-        return -1;
-    }
-
-    // 返回此列表中指定元素的最后一次出现的索引，如果此列表不包含元素，则返回-1
-    public int lastIndexOf(Object o) {
-        if (o == null) {
-            for (int i = size-1; i >= 0; i--)
-                if (elementData[i]==null)
-                    return i;
-        } else {
-            for (int i = size-1; i >= 0; i--)
-                if (o.equals(elementData[i]))
-                    return i;
-        }
-        return -1;
-    }
-
-    // 返回此ArrayList实例的浅拷贝，元素本身不被复制
-    public Object clone() {
-        try {
-            ArrayList<?> v = (ArrayList<?>) super.clone();
-            //Arrays.copyOf功能是实现数组的复制，返回复制后的数组。参数是被复制的数组和复制的长度
-            v.elementData = Arrays.copyOf(elementData, size);
-            v.modCount = 0;
-            return v;
-        } catch (CloneNotSupportedException e) {
-            // 这不应该发生，因为我们是可以克隆的
-            throw new InternalError(e);
-        }
-    }
-
-    // 以正确的顺序（从第一个到最后一个元素）返回一个包含此列表中所有元素的数组。
-    // 返回的数组将是“安全的”，因为该列表不保留对它的引用。
-    // 因此，调用者可以自由地修改返回的数组。
-    public Object[] toArray() {
-        return Arrays.copyOf(elementData, size);
-    }
-
-    // 以正确的顺序返回一个包含此列表中所有元素的数组（从第一个到最后一个元素）;
-    // 返回的数组的运行时类型是指定数组的运行时类型。 如果列表适合指定的数组，则返回其中。
-    // 否则，将为指定数组的运行时类型和此列表的大小分配一个新数组。
-    // 如果列表适用于指定的数组，其余空间（即数组的列表数量多于此元素），则紧跟在集合结束后的数组中的元素设置为null 。
-    @SuppressWarnings("unchecked")
-    public <T> T[] toArray(T[] a) {
-        if (a.length < size)
-            // 新建一个运行时类型的数组，但是ArrayList数组的内容
-            return (T[]) Arrays.copyOf(elementData, size, a.getClass());
-        //调用System提供的arraycopy()方法实现数组之间的复制
-        System.arraycopy(elementData, 0, a, 0, size);
-        if (a.length > size)
-            a[size] = null;
-        return a;
-    }
-
-    @SuppressWarnings("unchecked")
-    E elementData(int index) {
-        return (E) elementData[index];
-    }
-
-    // 返回此列表中指定位置的元素
-    public E get(int index) {
-        rangeCheck(index);
-
-        return elementData(index);
-    }
-
-    // 用指定的元素替换此列表中指定位置的元素
-    public E set(int index, E element) {
-        //对index进行界限检查
-        rangeCheck(index);
-
-        E oldValue = elementData(index);
-        elementData[index] = element;
-        //返回原来在这个位置的元素
-        return oldValue;
-    }
-
-    // 将指定的元素追加到此列表的末尾
-    public boolean add(E e) {
-        ensureCapacityInternal(size + 1);  // Increments modCount!!
-        //这里看到ArrayList添加元素的实质就相当于为数组赋值
-        elementData[size++] = e;
-        return true;
-    }
-
-    // 在此列表中的指定位置插入指定的元素。
-    // 先调用 rangeCheckForAdd 对index进行界限检查；然后调用 ensureCapacityInternal 方法保证capacity足够大；
-    // 再将从index开始之后的所有成员后移一个位置；将element插入index位置；最后size加1。
-    public void add(int index, E element) {
-        rangeCheckForAdd(index);
-
-        ensureCapacityInternal(size + 1);  // Increments modCount!!
-        //arraycopy()这个实现数组之间复制的方法一定要看一下，下面就用到了arraycopy()方法实现数组自己复制自己
-        System.arraycopy(elementData, index, elementData, index + 1,
-                         size - index);
-        elementData[index] = element;
-        size++;
-    }
-
-    // 删除该列表中指定位置的元素。 将任何后续元素移动到左侧（从其索引中减去一个元素）。
-    public E remove(int index) {
-        rangeCheck(index);
-
-        modCount++;
-        E oldValue = elementData(index);
-
-        int numMoved = size - index - 1;
-        if (numMoved > 0)
-            System.arraycopy(elementData, index+1, elementData, index,
-                             numMoved);
-        elementData[--size] = null; // clear to let GC do its work
-        //从列表中删除的元素
-        return oldValue;
-    }
-
-    // 从列表中删除指定元素的第一个出现（如果存在）。 如果列表不包含该元素，则它不会更改。
-    // 返回true，如果此列表包含指定的元素
-    public boolean remove(Object o) {
-        if (o == null) {
-            for (int index = 0; index < size; index++)
-                if (elementData[index] == null) {
-                    fastRemove(index);
-                    return true;
-                }
-        } else {
-            for (int index = 0; index < size; index++)
-                if (o.equals(elementData[index])) {
-                    fastRemove(index);
-                    return true;
-                }
-        }
-        return false;
-    }
-
-    private void fastRemove(int index) {
-        modCount++;
-        int numMoved = size - index - 1;
-        if (numMoved > 0)
-            System.arraycopy(elementData, index+1, elementData, index,
-                             numMoved);
-        elementData[--size] = null; // clear to let GC do its work
-    }
-
-    // 从列表中删除所有元素。
-    public void clear() {
-        modCount++;
-
-        // 把数组中所有的元素的值设为null
-        for (int i = 0; i < size; i++)
-            elementData[i] = null;
-
-        size = 0;
-    }
-
-    // 按指定集合的Iterator返回的顺序将指定集合中的所有元素追加到此列表的末尾。
-    public boolean addAll(Collection<? extends E> c) {
-        Object[] a = c.toArray();
-        int numNew = a.length;
-        ensureCapacityInternal(size + numNew);  // Increments modCount
-        System.arraycopy(a, 0, elementData, size, numNew);
-        size += numNew;
-        return numNew != 0;
-    }
-
-    // 将指定集合中的所有元素插入到此列表中，从指定的位置开始。
-    public boolean addAll(int index, Collection<? extends E> c) {
-        rangeCheckForAdd(index);
-
-        Object[] a = c.toArray();
-        int numNew = a.length;
-        ensureCapacityInternal(size + numNew);  // Increments modCount
-
-        int numMoved = size - index;
-        if (numMoved > 0)
-            System.arraycopy(elementData, index, elementData, index + numNew,
-                             numMoved);
-
-        System.arraycopy(a, 0, elementData, index, numNew);
-        size += numNew;
-        return numNew != 0;
-    }
-
-    // 从此列表中删除所有索引为fromIndex（含）和toIndex之间的元素。
-    // 将任何后续元素移动到左侧（减少其索引）。
-    protected void removeRange(int fromIndex, int toIndex) {
-        modCount++;
-        int numMoved = size - toIndex;
-        System.arraycopy(elementData, toIndex, elementData, fromIndex,
-                         numMoved);
-
-        // clear to let GC do its work
-        int newSize = size - (toIndex-fromIndex);
-        for (int i = newSize; i < size; i++) {
-            elementData[i] = null;
-        }
-        size = newSize;
-    }
-
-    // 检查给定的索引是否在范围内。
-    private void rangeCheck(int index) {
-        if (index >= size)
-            throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
-    }
-
-    // add和addAll使用的rangeCheck的一个版本
-    private void rangeCheckForAdd(int index) {
-        if (index > size || index < 0)
-            throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
-    }
-
-    // 返回IndexOutOfBoundsException细节信息
-    private String outOfBoundsMsg(int index) {
-        return "Index: "+index+", Size: "+size;
-    }
-
-    // 从此列表中删除指定集合中包含的所有元素。
-    public boolean removeAll(Collection<?> c) {
-        Objects.requireNonNull(c);
-        //如果此列表被修改则返回true
-        return batchRemove(c, false);
-    }
-
-    // 仅保留此列表中包含在指定集合中的元素。
-    // 换句话说，从此列表中删除其中不包含在指定集合中的所有元素。
-    public boolean retainAll(Collection<?> c) {
-        Objects.requireNonNull(c);
-        return batchRemove(c, true);
-    }
-
-
-    // 从列表中的指定位置开始，返回列表中的元素（按正确顺序）的列表迭代器。
-    // 指定的索引表示初始调用将返回的第一个元素为next 。 初始调用previous将返回指定索引减1的元素。
-    // 返回的列表迭代器是fail-fast
-    public ListIterator<E> listIterator(int index) {
-        if (index < 0 || index > size)
-            throw new IndexOutOfBoundsException("Index: "+index);
-        return new ListItr(index);
-    }
-
-    // 返回列表中的列表迭代器（按适当的顺序）。
-    //返回的列表迭代器是fail-fast
-    public ListIterator<E> listIterator() {
-        return new ListItr(0);
-    }
-
-    // 以正确的顺序返回该列表中的元素的迭代器。
-    // 返回的迭代器是fail-fast 。
-    public Iterator<E> iterator() {
-        return new Itr();
-    }
-
+    
 }
 ```
 
