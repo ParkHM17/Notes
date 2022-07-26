@@ -441,11 +441,11 @@ ALTER TABLE `table_name` ADD INDEX index_name ( `column1`, `column2`, `column3` 
 - 为每一个分片指定一个ID范围。
 - 分布式ID生成器。
 
-### 5.2 主从复制
+### 5.2 主从复制和读写分离
 
 
 
-### 5.3 读写分离
+
 
 
 
