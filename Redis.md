@@ -1293,8 +1293,6 @@ Redis一般会把一些常见的值放到一个共享对象中，这样可使程
 - 各种命令的返回值。
 - 包括`0`在内，小于`REDIS_SHARED_INTEGERS`（默认值为10000）的所有整数。
 
-著作权归https://pdai.tech所有。 链接：https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-object.html
-
 **为什么Redis不共享列表对象、哈希对象、集合对象、有序集合对象，只共享字符串对象**？
 
 - 列表对象、哈希对象、集合对象、有序集合对象本身就包含字符串对象，复杂度较高。
