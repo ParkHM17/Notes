@@ -6,39 +6,49 @@
 
 ### 1.1 什么是Redis？
 
-Redis是一款**内存高速缓存数据库**。Redis全称为：**Remote Dictionary Server**（远程数据服务），使用**C语言编写**。
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-introduce.html#%E4%BB%80%E4%B9%88%E6%98%AFredis)
 
-Redis是一个**key-value**存储系统（键值对存储系统），支持丰富的数据类型，如：String、List、Set、Zset、Hash。
+Redis是一款**内存高速缓存数据库**，全称为：**Remote Dictionary Server**（远程数据服务），使用**C语言编写**，是一个**Key-Value**存储系统（键值对存储系统），支持丰富的数据类型，如：`String`、`List`、`Set`、`Zset`、`Hash`。
 
-与传统数据库不同的是**Redis的数据是存在内存中的（可持久化）** ，也就是它是内存数据库，所以读写速度非常快，因此Redis被广泛应用于缓存方向。
+### 1.2 为什么要用Redis？
 
-另外，Redis除了做缓存之外，也经常用来做**分布式锁**，甚至是**消息队列**。Redis提供了**多种数据类型来支持不同的业务场景**。Redis还支持**事务 、Lua 脚本、多种集群方案**。
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-introduce.html#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E4%BD%BF%E7%94%A8redis)
 
-#### 与Memcached比较:boat:
+- 读写性能优异。
+- 数据类型丰富。
+- 操作原子性。
+- 持久化。
+- 发布/订阅。
+- 分布式。
+
+### 1.3 Redis的使用场景
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-introduce.html#redis%E7%9A%84%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF)
+
+- 热点数据缓存。
+- 分布式锁。
+- 消息队列：`list`数据结构可以作为一个简单的队列使用，Redis 5.0新增的`Stream`更加适合做消息队列。
+
+### 1.4 与Memcached的比较
 
 > 参考链接：[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#%E8%AF%B4%E4%B8%80%E4%B8%8B-redis-%E5%92%8C-memcached-%E7%9A%84%E5%8C%BA%E5%88%AB%E5%92%8C%E5%85%B1%E5%90%8C%E7%82%B9)
 >
 
-##### 共同点
+#### 共同点
 
 - 都是**基于内存**的数据库，一般都用来当做缓存使用。
 - 都有**过期策略**。
 - 两者的**性能都非常高**。
 
-##### 区别
+#### 区别
 
-- **Redis支持更丰富的数据类型（支持更复杂的应用场景）**。Redis不仅仅支持简单的k-v类型数据，同时还提供List、Set、Zset、Hash等数据类型的存储。Memcached只支持最简单的k-v数据类型。
-- **Redis支持数据的持久化**。它可以将内存中的数据保持在磁盘中，重启的时候可以再次加载进行使用，而Memcached把数据全部存在内存之中。
-- **Redis有灾难恢复机制。** 因为可以把缓存中的数据持久化到磁盘上。
-- Redis在服务器内存使用完之后，可以将不用的数据放到磁盘上。但是，**Memcached在服务器内存使用完之后，就会直接报异常**。
-- **Redis支持原生Cluster模式**。Memcached**没有原生的集群模式**，需要依靠客户端来实现往集群中分片写入数据。
-- Memcached是**多线程、非阻塞IO复用**的网络模型；Redis使用**单线程的多路IO复用**模型。（Redis `v6.0`引入了多线程IO）
-- Redis支持**发布/订阅模型、Lua 脚本、事务**等功能，而Memcached不支持。并且Redis支持更多的编程语言。
-- Memcached过期数据的**删除策略只用了惰性删除**，而Redis**同时使用了惰性删除与定期删除**。
-
-### 1.2 Redis的使用场景:boat:
-
-> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-introduce.html#redis%E7%9A%84%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF)
+- **Redis支持更丰富的数据类型（支持更复杂的应用场景）**，不仅仅支持简单的Key-Value类型数据，同时还提供`List`、`Set`、`Zset`、`Hash`等数据类型的存储；Memcached只支持最简单的Key-Value数据类型。
+- **Redis支持数据的持久化**，它可以将内存中的数据保持在磁盘中，重启的时候可以再次加载进行使用；Memcached把数据全部存在内存之中。
+- Redis在服务器内存使用完之后，可以将不用的数据放到磁盘上；但是**Memcached在服务器内存使用完之后，就会直接报异常**。
+- **Redis支持原生Cluster模式**；Memcached**没有原生的集群模式**，需要依靠客户端来实现往集群中分片写入数据。
+- Redis使用**单线程的多路I/O复用**模型。（Redis 6.0引入了多线程I/O）；Memcached是**多线程、非阻塞IO复用**的网络模型。
+- Redis支持**发布/订阅模型、Lua脚本**等功能。
+- Redis**同时使用了惰性删除与定期删除**的过期删除策略；Memcached过期数据的**删除策略只用了惰性删除**。
 
 ## 二、Redis持久化:rocket:
 
@@ -844,16 +854,16 @@ Redlock只有建立在**时钟正确**的前提下才能正常工作，如果可
 1. 使用分布式锁，在上层完成**互斥**目的，虽然极端情况下锁会失效，但它可以最大程度把并发请求阻挡在最上层，减轻操作资源层的压力。
 2. 但对于要求数据绝对正确的业务，在资源层一定要做好**兜底**，设计思路可以借鉴fencing token的方案。
 
-## 五、数据结构:rocket:
+## 二、数据结构:rocket:
 
 > 参考链接：[Redis文档](https://redis.io/docs/manual/data-types/)、[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-types.html)、[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#redis-%E5%B8%B8%E8%A7%81%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84)、[博客园](https://www.cnblogs.com/ysocean/p/9080940.html)、[博客园](https://www.cnblogs.com/xrq730/p/8944539.html)
 >
 
-### 5.1 5种基础数据类型
+### 2.1 5种基础数据类型
 
-> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-types.html)、[博客园](https://www.cnblogs.com/ysocean/p/9080940.html)、[博客园](https://www.cnblogs.com/xrq730/p/8944539.html)
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-types.html)、[JavaGuide](https://javaguide.cn/database/redis/redis-data-structures-01.html)
 
-Redis中所有的**key（键）都是字符串**，所以数据类型是指**存储值的数据类型**，主要包括常见的5种基础数据类型，分别是：String、List、Set、Zset、Hash。
+Redis中所有的**Key（键）都是字符串**，所以数据类型是指**存储值的数据类型**，主要包括常见的5种基础数据类型，分别是：`String`、`List`、`Set`、`Zset`、`Hash`。
 
 ![5种基础数据类型](Redis.assets/datatype-basic.jpeg)
 
@@ -865,11 +875,9 @@ Redis中所有的**key（键）都是字符串**，所以数据类型是指**存
 |   Hash<br>散列   |           包含**键值对的无序散列表**           |              包含方法有添加、获取、删除单个元素              |
 | Zset<br>有序集合 |         和散列一样，**用于存储键值对**         | 字符串成员与浮点数分数之间的有序映射；**元素的排列顺序由分数的大小决定**；包含方法有添加、获取、删除单个元素以及根据分值范围或成员来获取元素 |
 
-#### String 字符串
+#### `String`字符串
 
-String是Redis中最基本的数据类型。
-
-String类型是**二进制安全**的，意思是Redis的String可以包含任何数据，如数字、字符串、jpg图片或者序列化的对象。
+`String`是Redis中最基本的数据类型。`String`类型是**二进制安全**（由于统计变量`len`，读写字符串时不依赖`“\0”`终止符）的，意思是Redis的`String`可以包含任何数据，如数字、字符串、图片或者序列化的对象。
 
 ##### 图例
 
@@ -877,35 +885,16 @@ String类型是**二进制安全**的，意思是Redis的String可以包含任�
 
 ##### 命令
 
-> 参考链接：[博客园](https://www.cnblogs.com/xrq730/p/8944539.html)、[博客园](https://www.cnblogs.com/ysocean/p/9080940.html)
-
-| 命令    |                          用法                          |                             描述                             |
-| ------- | :----------------------------------------------------: | :----------------------------------------------------------: |
-| `SET`   | `SET key value [EX seconds] [PX milliseconds] [NX|XX]` | （1）将Value关联到Key<br />（2）Key已关联则**覆盖，无视类型**。如果原生Key带有生存时间TTL，那么TTL会被清除 |
-| `GET`   |                       `GET key`                        | （1）返回Key关联的字符串值。如果Key不存在返回`(nil)`<br />（2）如果Key存储的不是字符串，返回错误，因为**`GET`只用于处理字符串** |
-| `MSET`  |            `MSET key value [key value ...]`            | （1）同时设置一个或多个Key-Value键值对。如果某个Key已经存在，那么MSET新值会覆盖旧值<br />（2）如果不希望对某个值覆盖，可以**使用`MSETNX`命令，所有Key都不存在才会进行覆盖**<br />（3）**`MSET`是一个原子性操作**，所有Key都会在同一时间被设置 |
-| `MGET`  |                  `MGET key [key ...]`                  | （1）返回**一个或多个给定Key对应的Value**。如果某个Key不存在，那么这个Key返回`(nil)` |
-| `SETEX` |               `SETEX key seconds value`                | （1）将Value关联到Key，设置Key过期时间为seconds（秒），**如果Key已存在则覆盖（包括值和过期时间）**<br />（2）`SET`也可以设置过期时间，但是**`SETNX`是一个原子操作**，即关联值与设置过期时间同一时间完成 |
-| `SETNX` |                   `SETNX key value`                    | （1）将Key的值设置为Value，**当且仅当Key不存在的时候**。如果Key已存在，不执行任何操作 |
-
-补充：
-
-- `MSET`和`MGET`这种**批量处理命令**能够极大提高操作效率。因为**n个命令执行耗时=n次网络传输时间+n次命令执行时间**，而批量处理命令会将**n次网络传输时间缩减为1次**，也就是**1次网络传输时间+n次命令处理时间**。但是需要注意：Redis是单线程的，如果一次批量处理命令过多，会造成Redis阻塞或网络拥塞（传输数据量大）。
-
-上面是String类型的基本命令，下面是自增自减操作。在实际工作中还是特别有用的（例如：分布式环境中统计系统的在线人数、利用Redis的高性能读写在Redis中完成秒杀而不是直接操作数据库）。
-
-|   命令   |          用法          |                             描述                             |
-| :------: | :--------------------: | :----------------------------------------------------------: |
-|  `INCR`  |       `INCR key`       | （1）Key中存储的数字值+1，返回增加后的值<br />（2）如果**Key不存在，那么Key的值被初始化为"0"再+1**<br />（3）如果**值包含错误类型或者字符串不能被表示为数字，返回错误**<br />（4）值限制在64位有符号数字表示之内 |
-|  `DECR`  |       `DECR key`       | （1）Key中存储的数字值-1，返回减少后的值<br />（2）其余同`INCR` |
-| `INCRBY` | `INCRBY key increment` | （1）Key中存储的数字值+`increment`，返回增加后的值<br />（2）其余同`INCR` |
-| `DECRBY` | `DECRBY key decrement` | （1）Key中存储的数字值-`decrement`，返回减少后的值<br />（2）其余同`INCR` |
-
-补充：
-
-- `INCR`/`DECR`在实际工作中还是非常管用的，举两个例子：
-  - 原先单机环境中统计在线人数，变成分布式部署之后可以使用`INCR`/`DECR`。
-  - 由于Redis本身极高的读写性能，一些秒杀的场景库存增减可以基于Redis来做而不是直接操作DB。
+|   命令   |            简述             |        使用         |
+| :------: | :-------------------------: | :-----------------: |
+|  `GET`   |   获取存储在给定键中的值    |      `GET key`      |
+|  `SET`   |   设置存储在给定键中的值    |   `SET key value`   |
+| `SETNX`  | 只有在`key`不存在时设置其值 |  `SETNX key value`  |
+|  `DEL`   |   删除存储在给定键中的值    |      `DEL key`      |
+|  `INCR`  |       将键存储的值加1       |     `INCR key`      |
+|  `DECR`  |       将键存储的值减1       |     `DECR key`      |
+| `INCRBY` |    将键存储的值加上整数     | `INCRBY key amount` |
+| `DECRBY` |    将键存储的值减去整数     | `DECRBY key amount` |
 
 **执行示例**：
 
@@ -936,15 +925,9 @@ OK
 "102"
 ```
 
-##### 使用场景
+#### `List`列表
 
-1. 缓存：经典使用场景，把常用信息（字符串，图片或者视频等）放到Redis中，Redis作为缓存层，MySQL作为持久化层，可降低MySQL的读写压力。
-
-#### List 列表
-
-Redis中的List其实就是**链表（Redis使用双端链表实现List）**。
-
-使用List结构可以轻松实现**最新消息排队功能**（比如新浪微博的TimeLine）。List的另一个应用就是**消息队列**，可以利用List的`PUSH`操作，将任务存放在List中，然后工作线程再用`POP`操作将任务取出进行执行。
+Redis中的`List`其实就是**链表（Redis使用双端链表实现`List`）**。使用`List`结构可以轻松实现**最新消息排队功能**（比如新浪微博的TimeLine）。`List`的另一个应用就是**消息队列**，可以利用`List`的`PUSH`操作，将任务存放在`List`中，然后工作线程再用`POP`操作将任务取出执行。
 
 ##### 图例
 
@@ -952,32 +935,21 @@ Redis中的List其实就是**链表（Redis使用双端链表实现List）**。
 
 ##### 命令
 
-> 参考链接：[博客园](https://www.cnblogs.com/xrq730/p/8944539.html)、[博客园](https://www.cnblogs.com/ysocean/p/9080940.html)
+|   命令   |                     简述                     |           使用            |
+| :------: | :------------------------------------------: | :-----------------------: |
+| `RPUSH`  |      将给定值（可以多个）推入到列表右端      | `RPUSH key value1 value2` |
+| `LPUSH`  |      将给定值（可以多个）推入到列表左端      | `LPUSH key value1 value2` |
+|  `RPOP`  |   从列表的右端弹出一个值，并返回被弹出的值   |        `RPOP key`         |
+|  `LPOP`  |   从列表的左端弹出一个值，并返回被弹出的值   |        `LPOP key`         |
+| `LRANGE` |         获取列表在给定范围上的所有值         |  `LRANGE key start end`   |
+| `LINDEX` | 通过索引获取列表中的元素，也可以使用负数下标 |    `LINDEX key index`     |
+|  `LSET`  |       将列表`index`位置的值设为`value`       |  `LSET key index value`   |
 
-|    命令     |                  用法                  |                             描述                             |
-| :---------: | :------------------------------------: | :----------------------------------------------------------: |
-|   `LPUSH`   |     `LPUSH key value [value ...]`      | （1）将一个或多个值Value插入到**列表的表头**；如果有多个Value，那么按**从左到右的顺序依次插入表头**<br />（2）Key不存在，会**创建一个空列表**并执行`LPUSH`操作<br />（3）Key存在但不是列表类型，返回错误 |
-|  `LPUSHX`   |           `LPUSHX key value`           | （1）将值Value插入到列表的表头，**当且仅当Key存在且为一个列表时**<br />（2）Key不存在，不执行任何操作 |
-|   `LPOP`    |               `LPOP key`               |                 （1）移除并返回列表的头元素                  |
-|  `LRANGE`   |        `LRANGE key start stop`         | （1）返回列表中**指定区间内的元素**，区间以偏移量`start`和`stop`指定，二者都以0为基数<br />（2）可使用负数下标，-1表示列表最后一个元素<br />（3）**`start`大于列表最大下标，返回空列表**；**`stop`大于列表最大下标，会使得`stop`等于列表最大下标** |
-|   `LREM`    |         `LREM key count value`         | （1）根据`count`的值，移除列表中与Value相等的元素<br />（2）`count`>0表示**从头到尾**搜索，移除与Value相等的元素，数量为`count`；`count`<0表示**从尾到头**搜索，移除与Value相等的元素，数量为`count`的绝对值；count=0表示移除表中**所有**与Value相等的元素 |
-|   `LSET`    |         `LSET key index value`         | （1）将列表下标为`index`的元素值设为Value<br />（2）`index`参数超出范围，或对一个空列表进行操作时，返回错误 |
-|  `LINDEX`   |           `LINDEX key index`           |              （1）返回列表中下标为`index`的元素              |
-|  `LINSERT`  | `LINSERT key BEFORE|AFTER pivot value` | （1）将值Value插入列表中，位于`pivot`前面或者后面<br />（2）`pivot`不存在于列表中时，不执行任何操作；Key不存在，不执行任何操作 |
-|   `LLEN`    |               `LLEN key`               |           （1）返回列表的长度，如果Key不存在返回0            |
-|   `LTRIM`   |         `LTRIM key start stop`         | （1）对列表进行修剪，让列表**只返回指定区间内的元素**，不存在指定区间内的都将被移除 |
-|   `RPOP`    |               `RPOP key`               |                 （1）移除并返回列表的尾元素                  |
-| `RPOPLPUSH` |     `RPOPLPUSH source destination`     | 在一个原子时间内，执行两个动作：<br />（1）将列表`source`中**最后一个元素弹出并返回给客户端**<br />（2）将`source`**弹出的元素插入到列表`desination`作为头元素** |
-|   `RPUSH`   |     `RPUSH key value [value ...]`      |                （1）在表尾操作，其余同`LPUSH`                |
-|  `RPUSHX`   |           `RPUSHX key value`           |               （1）在表尾操作，其余同`LPUSHX`                |
-
-补充：
-
-- 使用技巧：
-  - `lpush`+`lpop`=Stack(栈)
-  - `lpush`+`rpop`=Queue（队列）
-  - `lpush`+`ltrim`=Capped Collection（有限集合）
-  - `lpush`+`brpop`（`rpop`的阻塞版本）=Message Queue（消息队列）
+补充：使用技巧：
+- `lpush`+`lpop`=栈
+- `lpush`+`rpop`=队列
+- `lpush`+`ltrim`=有限集合
+- `lpush`+`brpop`（`rpop`的阻塞版本）=消息队列
 
 **执行示例**：
 
@@ -996,16 +968,9 @@ Redis中的List其实就是**链表（Redis使用双端链表实现List）**。
 (nil)
 ```
 
-##### 使用场景
+#### `Set`集合
 
-1. **微博TimeLine**：有人发布微博，用`lpush`加入时间轴，展示新的列表信息。
-2. **消息队列**。
-
-#### Set 集合
-
-Redis中的Set是String类型的**无序**集合。集合成员是唯一的，这就意味着集合中**不能出现重复的数据**。
-
-Redis中集合是通过**哈希表**实现的，所以添加、删除、查找的复杂度都是O(1)。
+Redis中的`Set`是`String`类型的**无序**集合。集合成员是唯一的，这就意味着集合中**不能出现重复的数据**。Redis中集合是通过**哈希表**实现的，所以添加、删除、查找的复杂度都是O(1)。
 
 ##### 图例
 
@@ -1013,12 +978,12 @@ Redis中集合是通过**哈希表**实现的，所以添加、删除、查找�
 
 ##### 命令
 
-|    命令     |              用法              |                             描述                             |
-| :---------: | :----------------------------: | :----------------------------------------------------------: |
-|   `SADD`    | `SADD key number [member ...]` | （1）将**一个或多个`member`元素加入到集合**中，在集合中**已存在的`member`将被忽略**<br />（2）假如集合不存在，则**创建一个只包含`member`元素的集合**<br />（3）当Key**不是集合类型时，返回错误** |
-|   `SCARD`   |          `SCARD key`           |                （1）返回集合中的**元素数量**                 |
-| `SMEMBERS`  |         `SMEMBERS key`         | （1）返回集合中的所有成员<br />（2）**不存在的集合会被视为空集** |
-| `SISMEMBER` |     `SISMEMBER key member`     |  （1）判断`member`元素是否为集合的成员，0表示不是，1表示是   |
+|    命令     |                 简述                  |            使用            |
+| :---------: | :-----------------------------------: | :------------------------: |
+|   `SADD`    |       向集合添加一个或多个成员        | `SADD key member1 member2` |
+|   `SCARD`   |           获取集合的成员数            |        `SCARD key`         |
+| `SMEMBERS`  |         返回集合中的所有成员          |       `SMEMBERS key`       |
+| `SISMEMBER` | 判断`member`元素是否是集合`key`的成员 |   `SISMEMBER key member`   |
 
 **执行示例**：
 
@@ -1033,14 +998,9 @@ Redis中集合是通过**哈希表**实现的，所以添加、删除、查找�
 (integer) 1
 ```
 
-##### 使用场景
+#### `Hash`散列
 
-1. **标签**：给用户添加标签，或者用户给消息添加标签，这样有同一标签或者类似标签的可以给推荐关注的事或者关注的人。
-2. **点赞，或点踩，收藏等**，可以放到set中实现。
-
-#### Hash 散列
-
-Redis中的Hash是一个**String类型的field（字段）和value（值）的映射表**，Hash特别适合用于存储对象。
+Redis中的`Hash`是一个**String类型的field（字段）和value（值）的映射表**，`Hash`特别适合用于存储对象。
 
 ##### 图例
 
@@ -1048,12 +1008,12 @@ Redis中的Hash是一个**String类型的field（字段）和value（值）的�
 
 ##### 命令
 
-|   命令    |             用法             |                             描述                             |
-| :-------: | :--------------------------: | :----------------------------------------------------------: |
-|  `HSET`   |    `HSET key field value`    | （1）将哈希表中域`field`的值设为值Value<br />（2）**若哈希表不存在，一个新的Hash表被创建；如果`field`已经存在，覆盖旧的值** |
-|  `HGET`   |       `HGET key field`       |              （1）返回哈希表中给定域`field`的值              |
-| `HGETALL` |        `HGETALL key`         |                （1）返回哈希表中所有的域和值                 |
-|  `HDEL`   | `HDEL key filed [field ...]` | （1）删除**哈希表中一个或多个指定域**<br />（2）不存在的域将被**忽略** |
+|   命令    |             简述             |           使用           |
+| :-------: | :--------------------------: | :----------------------: |
+|  `HSET`   | 设置指定哈希表中指定字段的值 |  `HSET key field value`  |
+|  `HGET`   | 获取指定哈希表中指定字段的值 |     `HGET key field`     |
+| `HGETALL` | 获取指定哈希表中所有的键值对 |      `HGETALL key`       |
+|  `HDEL`   |   删除一个或多个哈希表字段   | `HDEL key filed1 field2` |
 
 **执行示例**：
 
@@ -1086,18 +1046,14 @@ Redis中的Hash是一个**String类型的field（字段）和value（值）的�
 8) "xiaohao@163.com"
 ```
 
-##### 使用场景
+#### `Zset`有序集合
 
-1. **缓存**：更直观，相比String能更节省空间地维护缓存信息，如用户信息，视频信息等。
+Redis中的`Zset`和`Set`一样也是`String`类型元素的集合，且**不允许出现重复成员**。不同的是每个元素都会关联一个`double`类型的分数。Redis正是通过分数来为集合中的成员进行**从小到大的排序**。
 
-#### Zset 有序集合
+`Zset`的成员是唯一的，但分数却可以重复。`Zset`是通过两种数据结构实现的：
 
-Redis中的Zset和Set一样也是String类型元素的集合，且**不允许出现重复成员**。不同的是每个元素都会关联一个double类型的分数。Redis正是通过分数来为集合中的成员进行**从小到大的排序**。
-
-Zset的成员是唯一的，但分数（score）却可以重复。Zset是通过两种数据结构实现的：
-
-1. **压缩列表(ziplist)**：ziplist是为了提高存储效率而设计的**一种特殊编码的双向链表**。它可以存储**字符串或者整数**，存储整数时是采用**整数的二进制**而不是字符串形式存储。它能在O(n)的时间复杂度下完成对两端的`push`和`pop`操作。但是因为每次操作都需要重新分配ziplist的内存，所以实际复杂度和ziplist的内存使用量相关。
-2. **跳跃表（zSkiplist)**：跳跃表的性能可以保证在查找、删除、添加等操作的时候在**对数期望时间内**完成，这个性能是可以和平衡树来相比较的，而且在实现方面比平衡树要优雅，这是采用跳跃表的主要原因。跳跃表的复杂度是O(log(n))。
+- **压缩列表（ziplist）**：`ziplist`是为了提高存储效率而设计的**一种特殊编码的双向链表**。它可以存储**字符串或者整数**，存储整数时是采用**整数的二进制**而不是字符串形式存储。它能在O(n)的时间复杂度下完成对两端的`push`和`pop`操作，但是因为每次操作都需要重新分配`ziplist`的内存，所以实际复杂度和`ziplist`的内存使用量相关。
+- **跳跃表（zSkiplist）**：跳跃表的性能可以保证在查找、删除、添加等操作的时候在**对数期望时间内**完成，这个性能是可以和平衡树来相比较的，而且在实现方面比平衡树要优雅，这是采用跳跃表的主要原因。跳跃表的复杂度是O(log(n))。
 
 ##### 图例
 
@@ -1105,11 +1061,11 @@ Zset的成员是唯一的，但分数（score）却可以重复。Zset是通过�
 
 ##### 命令
 
-|   命令   |                            用法                             |                             描述                             |
-| :------: | :---------------------------------------------------------: | :----------------------------------------------------------: |
-|  `ZADD`  | `ZADD key score member [[score member] [score member] ...]` | （1）将一个或多个`member`元素及其`score`值加入Zset中<br />（2）如果`member`已经是Zset的成员，那么**更新`member`对应的`score`并重新插入`member`**保证其在正确的位置上<br />（3）`score`可以是整数值或双精度浮点数 |
-| `ZRANGE` |            `ZRANGE key start stop [WITHSCORES]`             | （1）返回Zset中指定区间内的成员，成员位置按`score`**从小到大排序**；具有相同`score`的成员按字典序排列；若需要**从大到小排列，可使用`ZREVRANGE`命令**<br />（2）下标参数`start`和`stop`都以0为底，也可以用负数；`WITHSCORES`选项可让成员和其`score`一并返回 |
-|  `ZREM`  |               `ZREM key member [member ...]`                | （1）移除Zset中的一个或多个成员，不存在的成员将被忽略<br />（2）当Key存在但不是有序集时，返回错误 |
+|   命令   |                           用法                           |                   描述                   |
+| :------: | :------------------------------------------------------: | :--------------------------------------: |
+|  `ZADD`  |             向指定有序集合添加一个或多个元素             | `ZADD key score1 member1 score2 member2` |
+| `ZRANGE` | 获取指定有序集合`start`和`end`之间的元素（分数从低到高） |          `ZRANGE key start end`          |
+|  `ZREM`  |              移除有序集合中的一个或多个成员              |        `ZREM key member1 member2`        |
 
 **执行示例**：
 
@@ -1123,19 +1079,15 @@ Zset的成员是唯一的，但分数（score）却可以重复。Zset是通过�
 "100"
 ```
 
-##### 使用场景
-
-1. **排行榜**：有序集合经典使用场景。例如小说视频等网站需要对用户上传的小说视频做排行榜，榜单可以按照用户关注数，更新时间，字数等打分，做排行。
-
-### 5.2 3种特殊数据类型:boat:
+### 2.2 3种特殊数据类型:boat:
 
 > 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-type-special.html)
 
-Redis除了上述5种基础数据类型外，还有3种特殊的数据类型，分别是**HyperLogLog**（基数统计），**Bitmaps** （位图）和**geospatial**（地理位置）。
+Redis除了上述5种基础数据类型外，还有3种特殊的数据类型，分别是`HyperLogLog`（基数统计），`Bitmaps`（位图）和`geospatial`（地理位置）。
 
-#### HyperLogLog（基数统计）
+#### `HyperLogLog`（基数统计）
 
-Redis `v2.8.9`版本更新了Hyperloglog数据结构。
+Redis `v2.8.9`版本更新了`Hyperloglog`数据结构。
 
 ##### 什么是基数？
 
@@ -1166,17 +1118,17 @@ OK
 (integer) 13
 ```
 
-#### Bitmap（位存储）
+#### `Bitmap`（位存储）
 
-Bitmap即位图数据结构，是操作二进制位来进行记录，只有**0和1两个状态**。
+`Bitmap`即位图数据结构，是操作二进制位来进行记录，只有**0和1两个状态**。
 
 ##### 用来解决什么问题？
 
-统计用户信息：活跃|不活跃、 登录|未登录、 打卡|不打卡。类似这种包含**两个状态的，都可以使用 Bitmaps**。
+统计用户信息：活跃|不活跃、 登录|未登录、 打卡|不打卡。类似这种包含**两个状态的，都可以使用`Bitmaps`**。
 
 ##### 命令使用
 
-1. 使用bitmap来记录周一到周日的打卡
+1. 使用`bitmap`来记录周一到周日的打卡
 
    周一：1、周二：0、周三：0、周四：1......
 
@@ -1213,24 +1165,19 @@ Bitmap即位图数据结构，是操作二进制位来进行记录，只有**0�
    (integer) 3
    ```
 
-#### Geospatial（地理位置）
+#### `Geospatial`（地理位置）
 
-Redis的Geo在Redis `v3.2`版本就推出了。这个功能可以推算地理位置的信息：两地之间的距离、方圆几里的人等。
+Redis的`Geospatial`在Redis `v3.2`版本就推出了。这个功能可以推算地理位置的信息：两地之间的距离、方圆几里的人等。
 
-> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-type-special.html#geospatial-%E5%9C%B0%E7%90%86%E4%BD%8D%E7%BD%AE)
->
-
-### 5.3 Redis `v5.0`新数据结构:rainbow:
+### 2.3 Redis `v5.0`新数据结构:rainbow:
 
 > 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-type-stream.html)
 
-Redis的作者在`v5.0`中放出一个新的数据结构——Stream。Stream的内部其实也是一个队列，**每一个不同的key，对应的是不同的队列，每个队列的元素（也就是消息）都有一个`msgid`，并且需要保证`msgid`是严格递增的**。
+Redis的作者在`v5.0`中放出一个新的数据结构——`Stream`。`Stream`的内部其实也是一个队列，**每一个不同的Key，对应的是不同的队列，每个队列的元素（也就是消息）都有一个`msgid`，并且需要保证`msgid`是严格递增的**。
 
-在Stream当中，消息是默认持久化的，即便是Redis重启，也能够读取到消息。那么，Stream是如何做到多播的呢？
+在`Stream`当中，消息是默认持久化的，即便是Redis重启，也能够读取到消息。那么，`Stream`是如何做到多播的呢？其实非常简单，与其他队列系统相似，Redis对不同的消费者，可以消费同一个消息；对于不同的消费组，都维护一个`Idx`下标，表示这一个消费群组消费到了哪里，每次进行消费，都会更新一下这个下标，往后面一位进行偏移。
 
-其实非常简单，与其他队列系统相似，Redis对不同的消费者，可以消费同一个消息；对于不同的消费组，都维护一个`Idx`下标，表示这一个消费群组消费到了哪里，每次进行消费，都会更新一下这个下标，往后面一位进行偏移。
-
-### 5.4 对象机制详解:airplane:
+### 2.4 对象机制详解:airplane:
 
 > 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-object.html)
 
@@ -1240,33 +1187,27 @@ Redis的作者在`v5.0`中放出一个新的数据结构——Stream。Stream的
 
 上图反映了Redis的**每种对象**其实都由**对象结构（redisObject）**与**对应编码的底层数据结构**组合而成，而**每种对象类型对应若干编码方式，不同的编码方式所对应的底层数据结构是不同的**。所以需要从几个角度来着手底层研究：
 
-- **对象设计机制**：对象结构（redisObject）
-- **编码类型和底层数据结构**：对应编码的数据结构
+- **对象设计机制**：对象结构（redisObject）。
+- **编码类型和底层数据结构**：对应编码的数据结构。
 
-#### redisObject
+#### 为什么Redis会设计`redisObject`？
 
-##### 为什么Redis会设计redisObject？
+在Redis的命令中，用于对键进行处理的命令占了很大一部分，而对于键所保存的**值类型的命令又各不相同**。如：`LPUSH`和`LLEN`只能用于列表键，而`SADD`和`SRANDMEMBER`只能用于集合键；另外一些命令，比如`DEL`、`TTL`和`TYPE`可以用于任何类型的键。**要正确实现这些命令，必须为不同类型的键设置不同的处理方式**，例如：删除一个列表键和删除一个字符串键的操作过程就不太一样。以上的描述说明，**Redis必须让每个键都带有类型信息，使得程序可以检查键的类型，并为它选择合适的处理方式**。
 
-在Redis的命令中，用于对键进行处理的命令占了很大一部分，而对于键所保存的**值类型的命令又各不相同**。如：`LPUSH`和`LLEN`只能用于列表键，而`SADD`和`SRANDMEMBER`只能用于集合键；另外一些命令，比如`DEL`、`TTL`和`TYPE`可以用于任何类型的键。
-
-**要正确实现这些命令，必须为不同类型的键设置不同的处理方式**，例如：删除一个列表键和删除一个字符串键的操作过程就不太一样。
-
-以上的描述说明，**Redis必须让每个键都带有类型信息，使得程序可以检查键的类型，并为它选择合适的处理方式**。
-
-进一步地，例如集合类型就可以由字典和整数集合两种不同的数据结构实现。但是当用户执行`ZADD`命令时，用户不必关心集合使用的是什么编码，只要Redis能按照`ZADD`命令的指示将新元素添加到集合就可以了。
-
-这又说明：**操作数据类型的命令除了要对键的类型进行检查之外，还需要根据数据类型的不同编码进行多态处理**。
+进一步地，例如集合类型就可以由字典和整数集合两种不同的数据结构实现。但是当用户执行`ZADD`命令时，用户不必关心集合使用的是什么编码，只要Redis能按照`ZADD`命令的指示将新元素添加到集合就可以了。这又说明：**操作数据类型的命令除了要对键的类型进行检查之外，还需要根据数据类型的不同编码进行多态处理**。
 
 为了解决以上问题，**Redis构建了自己的类型系统**，这个系统的主要功能包括：
 
-1. redisObject对象；
-2. 基于redisObject对象的类型检查；
-3. 基于redisObject对象的显式多态函数；
-4. 对redisObject进行分配、共享和销毁的机制。
+- `redisObject`对象。
+- 基于`redisObject`对象的类型检查。
+- 基于`redisObject`对象的显式多态函数。
+- 对`redisObject`进行分配、共享和销毁的机制。
 
-##### redisObject数据结构
+总结：Redis使用自己实现的对象机制（`redisObject`）来实现**类型判断**、**命令多态**和**基于引用次数的垃圾回收**。
 
-redisObject是Redis类型系统的核心，数据库中的**每个键、值以及Redis本身处理的参数**都表示为这种数据类型。
+#### `redisObject`数据结构
+
+`redisObject`是Redis类型系统的核心，数据库中的**每个键、值以及Redis本身处理的参数**都表示为这种数据类型。
 
 ```c
 /*
@@ -1305,7 +1246,7 @@ typedef struct redisObject {
   #define OBJ_HASH 4 // 哈希表
   ```
 
-- encoding记录了对象所保存的值的编码，他的值可能是以下常量中的一个：
+- `encoding`记录了对象所保存的值的编码，它的值可能是以下常量中的一个：
 
   ```c
   /*
@@ -1324,36 +1265,57 @@ typedef struct redisObject {
   #define OBJ_ENCODING_STREAM 10 /* Encoded as a radix tree of listpacks */
   ```
 
-- `ptr`是一个指针，**指向实际保存值的数据结构**，这个数据结构由`type`和`encoding`属性决定。例如：如果一个redisObject的`type`属性为`OBJ_LIST`，`encoding`属性为`OBJ_ENCODING_QUICKLIST`，那么这个对象就是一个**列表（List)**，它的值保存在一个`QuickList`的数据结构内，而`ptr`指针就指向`QuickList`。
+- `ptr`是一个指针，**指向实际保存值的数据结构**，这个数据结构由`type`和`encoding`属性决定。例如：如果一个`redisObject`的`type`属性为`OBJ_LIST`，`encoding`属性为`OBJ_ENCODING_QUICKLIST`，那么这个对象就是一个**列表（List)**，它的值保存在一个`QuickList`的数据结构内，而`ptr`指针就指向`QuickList`。
 
-##### 命令的类型检查和多态处理
+- `lru`：记录了该对象最后一次被命令程序访问的时间。
+
+- `refcount`：记录了该对象的引用计数。
+
+#### 命令的类型检查和多态处理
 
 **当执行一个处理数据类型命令的时候，Redis执行以下步骤**：
 
-1. 根据给定的Key，在数据库字典中查找与之相对应的redisObject，如果没找到就返回`NULL`；
-2. 检查redisObject的`type`属性和执行命令所需的类型是否相符，如果不相符返回类型错误；
-3. 根据redisObject的`encoding`属性指定的编码，选择合适的操作函数来处理底层的数据结构；
+1. 根据给定的`Key`，在数据库字典中查找与之相对应的`redisObject`，如果没找到就返回`NULL`；
+2. 检查`redisObject`的`type`属性和执行命令所需的类型是否相符，如果不相符返回类型错误；
+3. 根据`redisObject`的`encoding`属性指定的编码，选择合适的操作函数来处理底层的数据结构；
 4. 返回数据结构的操作结果作为命令的返回值。
 
 例如执行`LPOP`命令，流程图如下：
 
 ![LPOP命令流程图](Redis.assets/LPOP.png)
 
-#### 对象共享、引用计数及对象销毁:rainbow:
+#### 对象共享（字符串）:boat:
 
-> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-object.html#%E5%AF%B9%E8%B1%A1%E5%85%B1%E4%BA%AB)
+Redis一般会把一些常见的值放到一个共享对象中，这样可使程序避免了重复分配的麻烦，也节约了一些CPU时间。
 
-### 5.5 底层数据结构:airplane:
+**Redis预分配的值对象如下**：
+
+- 各种命令的返回值。
+- 包括`0`在内，小于`REDIS_SHARED_INTEGERS`（默认值为10000）的所有整数。
+
+著作权归https://pdai.tech所有。 链接：https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-object.html
+
+**为什么Redis不共享列表对象、哈希对象、集合对象、有序集合对象，只共享字符串对象**？
+
+- 列表对象、哈希对象、集合对象、有序集合对象本身就包含字符串对象，复杂度较高。
+- 如果共享对象保存字符串对象，那么验证操作的复杂度为O(1)；如果共享对象是保存字符串值的字符串对象，那么验证操作的复杂度为O(N)；如果共享对象是包含多个值的对象，其中值本身又是字符串对象，即其它对象中嵌套了字符串对象，比如列表对象、哈希对象，那么验证操作的复杂度将会是O(N方)。
+- 如果对复杂度较高的对象创建共享对象，需要消耗很大的CPU，用这种消耗去换取内存空间，是不合适的
+
+#### 引用计数及对象销毁:boat:
+
+`redisObject`中有`refcount`属性，是对象的引用计数，如果计数为0那么就可以回收。
+
+- 每个`redisObject`结构都带有一个`refcount`属性，指示这个对象被引用了多少次；
+- 当新创建一个对象时，它的`refcount`属性被设置为1；当对一个对象进行共享时，Redis将这个对象的`refcount`加1；当使用完一个对象后，或者消除对一个对象的引用之后，程序将对象的`refcount`减1；
+- 当对象的`refcount`降至0时，这个`redisObject`结构以及它引用的数据结构的内存都会被释放。
+
+### 2.5 底层数据结构:airplane:
 
 > 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html)
 
-在前面对redisObject有了初步认识之后，可以继续理解如下的底层数据结构部分：
+#### SDS—简单动态字符串
 
-![Redis 底层数据结构](Redis.assets/db-redis-object-2-3.png)
-
-#### SDS 简单动态字符串
-
-Redis是用C语言写的，但是Redis中的字符串却不是C语言中的字符串（即以空字符'\0'结尾的字符数组）。它是自己构建了一种名为**简单动态字符串（Simple Dynamic String, SDS**）的抽象类型，并将**SDS作为Redis的默认字符串表示**。
+Redis是用C语言写的，但是Redis中的字符串却不是C语言中的字符串（即以空字符`'\0'`结尾的字符数组）。它是自己构建了一种名为**简单动态字符串（Simple Dynamic String, SDS**）的抽象类型，并将**SDS作为Redis的默认字符串表示**。
 
 ##### SDS定义
 
@@ -1735,7 +1697,7 @@ typedef struct zskiplist {
 > 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-x-redis-ds.html#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%94%A8%E5%B9%B3%E8%A1%A1%E6%A0%91%E6%88%96%E8%80%85%E5%93%88%E5%B8%8C%E8%A1%A8)
 >
 
-### 5.6 Redis对象与编码（底层结构）对应关系:airplane:
+### 2.6 Redis对象与编码（底层结构）对应关系:airplane:
 
 ![Redis 底层设计](Redis.assets/db-redis-object-2-4.png)
 
