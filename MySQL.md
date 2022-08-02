@@ -396,7 +396,7 @@ ALTER TABLE `table_name` ADD INDEX index_name ( `column1`, `column2`, `column3` 
 ### 4.12 索引失效
 
 - 破坏最左前缀匹配原则（包括`like`后通配符在最左边）。
-- 在索引列上做任何操作。
+- 在索引列上做运算。
 - 字符串不加单引号。
 
 ## 五、分表分库、主从复制和读写分离:airplane:
