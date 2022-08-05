@@ -80,11 +80,11 @@ LN是针对每一个样本，做特征的缩放。如果把BN应用于NLP任务�
 
 L1正则化：
 
-![L1](面试.assets/2018121020441991.png)
+![L1](Python.assets/2018121020441991.png)
 
 L2正则化：
 
-![L2](面试.assets/20181210204427458.png)
+![L2](Python.assets/20181210204427458.png)
 
 L1正则化对所有参数的惩罚力度都一样，可以让一部分权重变为零，因此产生稀疏模型，能够去除某些特征（权重为0则等效于去除）；L2正则化减少了权重的固定比例，使权重平滑，不会使权重变为0（不会产生稀疏模型），所以选择了更多的特征。
 
@@ -128,7 +128,7 @@ Dropout解决过拟合的原理：使该层每个神经元的激活层都有一�
 
 ### 参数初始化
 
-![参数初始化](面试.assets/20180408112207951.png)
+![参数初始化](Python.assets/20180408112207951.png)
 
 ### 激活函数
 
@@ -195,7 +195,7 @@ Swish激活函数的主要优点如下：
 
 ### Transformer
 
-![Transformer](面试.assets/v2-47b6b5c4fadc1ef9e7cbbb88a04a293f_1440w.jpg)
+![Transformer](Python.assets/v2-47b6b5c4fadc1ef9e7cbbb88a04a293f_1440w.jpg)
 
 #### 结构
 
@@ -221,7 +221,7 @@ Decoder端同样由N（原论文中**N=6**）个相同的大模块堆叠而成�
 
 ###### 多头self-attention模块
 
-![自注意力模块](面试.assets/v2-d7913da8a83d6ca9d67524560b263688_1440w.png)
+![自注意力模块](Python.assets/v2-d7913da8a83d6ca9d67524560b263688_1440w.png)
 
 上述attention可以被描述为**将query和key-value键值对的一组集合映射到输出**，其中query，keys，values和输出都是向量，其中 query和keys的维度均为$d_k$，values的维度为$d_v$（论文中$d_k=d_v=d_{model}/h=64$），输出被计算为values的加权和，其中分配给每个value的权重由query与对应key的相似性函数计算得来。这种attention的形式被称为“Scaled Dot-Product Attention”，对应到公式的形式为：
 $$
@@ -229,7 +229,7 @@ Attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V
 $$
 而多头self-attention模块，则是将$Q,K,V$通过参数矩阵映射后（给它们分别接一个全连接层），然后再做self-attention，将这个过程重复，最后再将所有的结果拼接起来，再送入一个全连接层即可：
 
-![多头自注意力模块](面试.assets/v2-03207f9148878efb9ccceedf14264932_1440w.jpg)
+![多头自注意力模块](Python.assets/v2-03207f9148878efb9ccceedf14264932_1440w.jpg)
 
 对应到公式：
 $$
