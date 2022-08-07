@@ -57,7 +57,7 @@ IoC只是一种**设计思想**，并非Spring特有。**IoC最常见以及最�
 
 优点：开发便捷，通俗易懂，方便维护。
 
-缺点：具有局限性，对于一些第三方资源，无法添加注解，只能采用前两种方式配置。
+缺点：具有局限性，对于一些第三方资源，无法添加注解，**只能采用前两种方式配置**。
 
 #### 依赖注入的3种方式
 
@@ -80,7 +80,7 @@ public class MyBean {
 
 ##### Setter注入（Ugly）
 
-Spring3.x中推荐使用的方式，在`Set`方法上完成对象注入。
+Spring 3.x中推荐使用的方式，在`Set`方法上完成对象注入。
 
 - 优点：选择性注入。
 - 缺点：对象实例化后，**依赖信息依然可以通过`Set`方法修改**。
@@ -99,7 +99,7 @@ public class MyBean {
 
 ##### 构造器注入（Good）
 
-Spring4.x中推荐使用的方式，对象以参数的形式传递，在构造函数中完成注入对象的初始化。
+Spring 4.x中推荐使用的方式，对象以参数的形式传递，在构造函数中完成注入对象的初始化。
 
 - 优点：**依赖不可变**：使用强制性的显式注入（`final`关键字保证不可变）；**依赖不为空**：在传参时如果参数为`NULL`则报错，提前避免了空指针异常。
 - 缺点：当需要注入的依赖较多时，构造函数会较为**臃肿**。
@@ -296,7 +296,7 @@ Spring解决循环依赖主要是依赖三级缓存，但是**在调用构造方
 
 ###### Spring为什么不能解决`prototype`作用域循环依赖？
 
-因为Spring**不会缓存prototype作用域的Bean**。
+因为**Spring不会缓存prototype作用域的Bean**。
 
 ###### Spring为什么不能解决多例的循环依赖？
 
@@ -456,9 +456,9 @@ public interface PlatformTransactionManager {
 }
 ```
 
-#### `TransactionDedinition`：事务属性
+#### `TransactionDefinition`：事务属性
 
-事务管理器接口**`PlatformTransactionManager`**通过 **`getTransaction(TransactionDefinition definition)`**方法来得到一个事务，这个方法里面的参数是**`TransactionDefinition`**类 ，这个类就定义了一些基本的事务属性。
+事务管理器接口**`PlatformTransactionManager`**通过**`getTransaction(TransactionDefinition definition)`**方法来得到一个事务，这个方法里面的参数是**`TransactionDefinition`**类 ，这个类就定义了一些基本的事务属性。
 
 **什么是事务属性呢？** 事务属性可以理解成**事务的一些基本配置，描述了事务策略如何应用到方法上**。事务属性包含了5个方面：
 
@@ -523,7 +523,7 @@ public interface TransactionStatus{
 
 > 参考链接：[JavaGuide](https://javaguide.cn/system-design/framework/spring/spring-transaction.html#%E4%BA%8B%E5%8A%A1%E5%B1%9E%E6%80%A7%E8%AF%A6%E8%A7%A3)
 
-实际业务开发中一般都是使用**`@Transactional`**注解来开启事务。
+实际业务开发中一般都是使用`@Transactional`注解来开启事务。
 
 #### 事务传播行为
 
@@ -594,7 +594,7 @@ public enum Propagation {
 
 **`TransactionDefinition.PROPAGATION_REQUIRED`**：
 
-使用最多的一个事务传播行为，平时经常使用的`@Transactional`注解**默认**使用就是这个事务传播行为。**如果当前存在事务，则加入该事务；如果当前没有事务，则创建一个新的事务**。也就是说：
+使用最多的一个事务传播行为，**平时经常使用的`@Transactional`注解默认使用的事务传播行为**。**如果当前存在事务，则加入该事务；如果当前没有事务，则创建一个新的事务**。也就是说：
 
 - 如果**外部方法没有开启事务**的话，`Propagation.REQUIRED`修饰的内部方法会**新开启自己的事务**，且开启的事务**相互独立**，互不干扰。
 - 如果外部方法开启事务并且被`Propagation.REQUIRED`的话，所有`Propagation.REQUIRED`修饰的**内部方法和外部方法均属于同一事务** ，只要一个方法回滚，整个事务均回滚。
@@ -728,7 +728,7 @@ public enum Isolation {
 
 #### 事务超时属性
 
-所谓事务超时，就是指一个**事务所允许执行的最长时间**，如果超过该时间限制但事务还没有完成，则**自动回滚事务**。在`TransactionDefinition`中以int的值来表示超时时间，其单位是**秒**，默认值为**-1**，这表示**事务的超时时间取决于底层事务系统或者没有超时时间**。
+所谓事务超时，就是指一个**事务所允许执行的最长时间**，如果超过该时间限制但事务还没有完成，则**自动回滚事务**。在`TransactionDefinition`中以`int`值来表示超时时间，其单位是**秒**，默认值为**-1**，这表示**事务的超时时间取决于底层事务系统或者没有超时时间**。
 
 #### 事务只读属性
 
@@ -747,7 +747,7 @@ public interface TransactionDefinition {
 
 #### 事务回滚规则
 
-规则定义了哪些异常会导致事务回滚而哪些不会。默认情况下，事务只有遇到**运行期异常**（`RuntimeException` 的子类）时才会回滚，`Error` 也会导致事务回滚，但是在遇到**检查型异常**时不会回滚。
+规则定义了哪些异常会导致事务回滚而哪些不会。默认情况下，事务只有遇到**运行期异常**（`RuntimeException`的子类）时才会回滚，`Error`也会导致事务回滚，但是在遇到**检查型异常**时不会回滚。
 
 如果**需要回滚自定义的特定异常类型**，可以这样：
 
