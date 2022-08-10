@@ -963,3 +963,15 @@ G1（Garbage-First），它是一款面向服务端应用的垃圾收集器，�
 
 `-XXThreadStackSize`：设置线程堆栈的大小（以字节为单位），数字后可带`K`、`M`或`G`（分别表示千字节、兆字节和千兆字节）。
 
+## 六、常见问题:airplane:
+
+### 6.1 怎么排查OOM问题？
+
+> 参考链接：[Java识堂](https://www.javashitang.com/md/jvm/%E4%BD%BF%E7%94%A8MAT%E8%BF%9B%E8%A1%8C%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E6%8E%92%E6%9F%A5.html)
+
+1. 增加两个参数：`-XX:+HeapDumpOnOutOfMemoryError`和`-XX:HeapDumpPath`；
+2. 同时使用`jstat`查看监控JVM的内存和GC情况，先大致观察问题出现在什么区域；
+3. 使用MAT工具打开`.dump`文件开始分析：
+   1. 首先点击Histogram查看占用内存过大的对象；
+   2. 然后点击domainator_tree查看这些对象被谁引用；
+   3. 最后点击thread_overview定位到具体的代码。

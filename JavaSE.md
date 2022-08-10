@@ -1748,3 +1748,4 @@ JDK 1.8的`ConcurrentHashMap`：
 ##### JDK 1.8
 
 `ConcurrentHashMap`取消了`Segment`分段锁，采用CAS和`synchronized`来保证并发安全。在链表长度超过一定阈值（8）时将链表转换为红黑树。`synchronized`只锁定当前链表或红黑二叉树的首节点，这样只要不产生哈希冲突，就不会产生并发，效率提升。
+
