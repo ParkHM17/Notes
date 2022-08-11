@@ -933,7 +933,7 @@ G1（Garbage-First），它是一款面向服务端应用的垃圾收集器，�
 
 **执行CMS GC的过程中同时有对象要放入老年代，而此时老年代空间不足**（可能是GC过程中浮动垃圾过多导致暂时性的空间不足），便会报`Concurrent Mode Failure`错误，并触发Full GC。
 
-## 五、关于JVM调优:airplane:
+## 五、关于JVM参数调优:airplane:
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/jvm-intro.html#%E5%9B%9B%E3%80%81%E5%85%B3%E4%BA%8Ejvm%E8%B0%83%E4%BC%98%E7%9A%84%E4%B8%80%E4%BA%9B%E6%96%B9%E9%9D%A2)
 
@@ -965,7 +965,7 @@ G1（Garbage-First），它是一款面向服务端应用的垃圾收集器，�
 
 ## 六、常见问题:airplane:
 
-### 6.2 怎么排查OOM问题？
+### 6.1 怎么排查OOM问题？
 
 > 参考链接：[Java识堂](https://www.javashitang.com/md/jvm/%E4%BD%BF%E7%94%A8MAT%E8%BF%9B%E8%A1%8C%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E6%8E%92%E6%9F%A5.html)
 
@@ -975,3 +975,41 @@ G1（Garbage-First），它是一款面向服务端应用的垃圾收集器，�
    1. 首先点击Histogram查看占用内存过大的对象；
    2. 然后点击domainator_tree查看这些对象被谁引用；
    3. 最后点击thread_overview定位到具体的代码。
+
+### 6.2 常用的调优命令有哪些？
+
+> 参考：/Reference/java面经/JVM篇/17
+
+- `jps`（JVM Process Status Tool）：显示指定系统内所有的HotSpot虚拟机进程。
+- `jstat`（JVM statistics Monitoring）：用于监视虚拟机运行时状态信息，它可以显示出虚拟机进程中的类装载、内存、垃圾收集、JIT编译等运行数据。
+- `jmap`（JVM Memory Map）：用于生成heap的`dump`文件。
+- `jhat`（JVM Heap Analysis Tool）：与`jmap`搭配使用，用来分析`jmap`生成的`dump`文件。`jhat`内置了一个微型的HTTP/HTML服务器，生成`dump`的分析结果后，可以在浏览器中查看。
+- `jstack`：用于生成JVM当前时刻的线程快照。
+- `jinfo`（JVM Configuration info）：实时查看和调整虚拟机运行参数。
+
+### 6.3 常见的调优工具有哪些？
+
+> 参考：/Reference/java面经/JVM篇/18
+
+常用调优工具分为两类：
+
+- JDK自带监控工具：
+  - JConsole（Java Monitoring and Management Console）：从JDK 5开始自带的Java监控和管理控制台，用于对JVM中内存，线程和类等的监控。
+  - JVisualVM：可以分析内存快照、线程快照、监控内存变化、GC变化等。
+- 第三方工具：
+  - MAT（Memory Analyzer Tool）：一个基于Eclipse的内存分析工具，是一个快速、功能丰富的Java heap分析工具，它可以帮助我们查找内存泄漏和减少内存消耗。
+  - GChisto：一款专业分析GC日志的工具。
+
+### 6.4 什么是OopMap和安全点？
+
+> 参考：/Reference/java面经/JVM篇/23
+>
+> [知乎](https://zhuanlan.zhihu.com/p/441867302)
+
+在类加载动作完成时，HotSpot就会把对象内什么偏移量上是什么类型的数据计算出来，记录到OopMap中。在即时编译过程中，也会在特定的位置上生成OopMap，记录下栈上和寄存器里哪些位置是引用。这些特定的位置主要在：
+
+- 循环的末尾（非 counted 循环）。
+- 方法临返回前/调用方法的`call`指令后。
+- 可能抛异常的位置。
+
+这些位置就是安全点（SafePoint）。用户程序执行时并非在代码指令流的任意位置都能够在停顿下来开始垃圾收集，而是必须是执行到安全点才能够暂停。
