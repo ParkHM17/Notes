@@ -755,3 +755,74 @@ public interface TransactionDefinition {
 @Transactional(rollbackFor= MyException.class)
 ```
 
+## 四、Spring MVC
+
+### 4.1 什么是MVC？
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/spring/spring-x-framework-springmvc.html#%E4%BB%80%E4%B9%88%E6%98%AFmvc)
+
+MVC：Model View Controller，是模型—视图—控制器的缩写，一种软件设计规范，本质上也是一种解耦。
+
+![MVC](Spring.assets/spring-springframework-mvc-4.png)
+
+- **Model**：应用程序中用于处理应用程序数据逻辑的部分。通常模型对象负责在数据库中存取数据。
+- **View**：应用程序中处理数据显示的部分。通常视图是依据模型数据创建的。
+- **Controller**：应用程序中处理用户交互的部分。通常控制器负责从视图读取数据，控制用户输入，并向模型发送数据。
+
+### 4.2 什么是Spring MVC？
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/spring/spring-x-framework-springmvc.html#%E4%BB%80%E4%B9%88%E6%98%AFspring-mvc)
+
+Spring MVC是Spring在Spring Container Core和AOP等技术基础上，遵循Web MVC的规范推出的WEB开发框架，目的是为了简化Java的WEB开发。
+
+### 4.3 Spring MVC的请求流程:airplane:
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/spring/spring-x-framework-springmvc.html#spring-mvc%E7%9A%84%E8%AF%B7%E6%B1%82%E6%B5%81%E7%A8%8B)
+
+具体流程步骤：
+
+1. **首先用户发送请求——>DispatcherServlet**，前端控制器收到请求后自己不进行处理，而是委托给其他的解析器进行处理，作为统一访问点，进行全局的流程控制；
+2. **DispatcherServlet——>HandlerMapping**，HandlerMapping会把请求映射为HandlerExecutionChain对象（包含一个Handler处理器（页面控制器）对象、多个HandlerInterceptor拦截器）对象，通过这种策略模式，很容易添加新的映射策略；
+3. **DispatcherServlet——>HandlerAdapter**，HandlerAdapter会把处理器包装为适配器，从而支持多种类型的处理器， 即适配器设计模式的应用，从而很容易支持很多类型的处理器；
+4. **HandlerAdapter——>处理器功能处理方法的调用**，HandlerAdapter会根据适配的结果调用真正的处理器的功能处理方法，完成功能处理，并返回一个ModelAndView对象（包含模型数据、逻辑视图名）；
+5. **ModelAndView的逻辑视图名——>ViewResolver**，ViewResolver把逻辑视图名解析为具体的View，通过这种策略模式，很容易更换其他视图技术；
+6. **View——>渲染**，View会根据传进来的Model模型数据进行渲染，此处的Model实际是一个Map数据结构，因此很容易支持其他视图技术；
+7. **返回控制权给DispatcherServlet**，由DispatcherServlet返回响应给用户，到此一个流程结束。
+
+![请求流程](Spring.assets/spring-springframework-mvc-8.png)
+
+其中几个重要的组件：
+
+> 参考：/Reference/java面经/Spring篇/6
+
+- 前端控制器（DispatcherServlet）：接收请求，响应结果。
+- 处理器映射器（HandlerMapping）：根据URL去查找处理器。
+- 处理器（Handler）：需要程序员去写代码处理逻辑。
+- 处理器适配器（HandlerAdapter）：会把处理器包装成适配器，这样就可以支持多种类型的处理器（适配器模式的应用）。
+- 视图解析器（ViewResovler）：进行视图解析，多返回的字符串，进行处理，可以解析成对应的页面。
+
+## 五、常见问题
+
+### 5.1 `BeanFactory`和`ApplicationContext`有什么区别？
+
+> 参考：/Reference/java面经/Spring篇/15
+
+`BeanFactory`和`ApplicationContext`是Spring的两大核心接口，都可以作为Spring的容器。
+
+- **关系**：`ApplicationContext`是`BeanFactory`的子接口，包含`BeanFactory`的所有特性，它的主要功能是支持大型的业务应用的创建。
+- **国际化**：`BeanFactory`不支持国际化，因为没有扩展`MessageResource`接口；而`ApplicationContext`扩展了`MessageResource`接口，因而具有消息处理的能力。
+- **事件机制（Event）**：基本上牵涉到事件（Event）方面的设计，就离不开观察者模式，`ApplicationContext`的事件机制主要通过`ApplicationEvent`和`ApplicationListener`这两个接口提供，当`ApplicationContext`中发布一个事件时，所有扩展了`ApplicationListener`的Bean都将接受到这个事件，并进行相应的处理
+- **底层资源的访问**：`ApplicationContext`扩展了`ResourceLoader`（资源加载器）接口，从而可以用来加载多个Resource；而`BeanFactory`没有扩展。
+- **对Web应用的支持**：`BeanFactory`通常以编程的方式被创建，`ApplicationContext`能以声明的方式创建，如使用`ContextLoader`。
+- **延迟加载**：
+  - `BeanFactroy`采用延迟加载形式来注入Bean，即只有在使用到某个Bean时才对该Bean进行加载实例化；而`ApplicationContext`则相反，它是在容器启动时，一次性创建了所有的Bean。这样在容器启动时就可以发现Spring中存在的配置错误。
+  - `BeanFactory`和`ApplicationContext`都支持`BeanPostProcessor`、`BeanFactoryPostProcessor`的使用。两者之间的区别是：`BeanFactory`需要手动注册，而`ApplicationContext`是自动注册。
+- **常用容器**：`BeanFactory`类型的有`XmlBeanFactory`，它可以根据`XML`文件中定义的内容，创建相应的Bean。`ApplicationContext`类型的常用容器有：
+  - `ClassPathXmlApplicationContext`：从`ClassPath`的`XML`配置文件中读取上下文，并生成上下文定义，应用程序上下文从程序环境变量中取得。
+  - `FileSystemXmlApplicationContext`：由文件系统中的`XML`配置文件读取上下文。
+  - `XmlWebApplicationContext`：由Web应用的`XML`文件读取上下文。
+
+`BeanFactory`是Spring框架的基础设施，面向Spring本身；而`ApplicationContext`面向开发者，相比`BeanFactory`提供了更多面向实际应用的功能，几乎所有场合都可以直接使用`ApplicationContext`，而不是底层的`BeanFactory`。
+
+### 5.2 事务注解的本质什么？
+
