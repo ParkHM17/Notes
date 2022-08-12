@@ -1791,3 +1791,30 @@ b = a + b;
 b += a;
 ```
 
+### 11.5 创建对象有几种方式？
+
+> 参考链接：[知乎](https://zhuanlan.zhihu.com/p/106836536)
+
+- 使用`new`关键字，需要使用到构造器。
+- 使用反射机制创建对象，**用`Class`类或`Constructor`类的`newInstance()`方法**，需要使用到构造器。
+  - 当使用`Class`类里的`newInstance()`方法时，调用的是无参构造方法。
+  - 当使用`java.lang.reflect.Constructor`类里的`newInstance()`方法，调用的是有参构造方法。
+- 使用`Object`类的`clone()`方法，需要实现`Cloneable`接口，**这种方式创建对象并不会调用任何构造函数**。
+- 使用反序列化，通过`ObjectInputStream`的`readObject()`方法反序列化类。**在反序列化时，创建对象并不会调用任何构造函数**。
+
+### 11.6 如何处理Java异常？
+
+> 参考：/Reference/java面经/基础篇/44
+
+使用`try-catch-finally`代码块：
+
+- `try`块：负责监控可能出现异常的代码。
+- `catch`块：负责捕获可能出现的异常，并进行处理。
+- `finally`块：负责清理各种资源，不管是否出现异常都会执行。
+
+其中`try`块是必须的，`catch`和`finally`至少存在一个标准异常处理流程。
+
+![try-catch-finally](JavaSE.assets/try-catch-finally.jpg)
+
+在开发过程中有时会使用到自定义异常，在选择抛出异常的时候，应该选择合适的异常类，从而可以明确地描述该异常情况。自定义异常通常是通过继承`java.lang.Exception`类，如果想自定义`Runtime`异常的话，可以继承`java.lang.RuntimeException`类，实现一个无参构造和一个带字符串参数的有参构造方法。在业务代码里，可以针对性的使用自定义异常。比如说：该用户不具备某某权限、余额不足等。
+
