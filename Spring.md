@@ -811,7 +811,7 @@ Spring MVC是Spring在Spring Container Core和AOP等技术基础上，遵循Web 
 
 - **关系**：`ApplicationContext`是`BeanFactory`的子接口，包含`BeanFactory`的所有特性，它的主要功能是支持大型的业务应用的创建。
 - **国际化**：`BeanFactory`不支持国际化，因为没有扩展`MessageResource`接口；而`ApplicationContext`扩展了`MessageResource`接口，因而具有消息处理的能力。
-- **事件机制（Event）**：基本上牵涉到事件（Event）方面的设计，就离不开观察者模式，`ApplicationContext`的事件机制主要通过`ApplicationEvent`和`ApplicationListener`这两个接口提供，当`ApplicationContext`中发布一个事件时，所有扩展了`ApplicationListener`的Bean都将接受到这个事件，并进行相应的处理
+- **事件机制（Event）**：基本上牵涉到事件（Event）方面的设计，就离不开观察者模式，`ApplicationContext`的事件机制主要由`ApplicationEvent`和`ApplicationListener`这两个接口提供，当`ApplicationContext`中发布一个事件时，所有扩展了`ApplicationListener`的Bean都将接受到这个事件，并进行相应的处理
 - **底层资源的访问**：`ApplicationContext`扩展了`ResourceLoader`（资源加载器）接口，从而可以用来加载多个Resource；而`BeanFactory`没有扩展。
 - **对Web应用的支持**：`BeanFactory`通常以编程的方式被创建，`ApplicationContext`能以声明的方式创建，如使用`ContextLoader`。
 - **延迟加载**：
@@ -826,3 +826,82 @@ Spring MVC是Spring在Spring Container Core和AOP等技术基础上，遵循Web 
 
 ### 5.2 事务注解的本质什么？
 
+> 参考：/Reference/java面经/Spring篇/23
+
+`@Transactional`注解仅仅是一些（和事务相关的）元数据，在运行时被事务基础设施读取消费，并使用这些元数据来配置Bean的事务行为。大致来说具有两方面功能：一是表明该方法要参与事务，二是配置相关属性来定制事务的参与方式和运行行为。**声明式事务主要得益于Spring AOP**，即使用一个事务拦截器，在方法调用的前后/周围进行事务性增强（Advice），来驱动事务完成。
+
+## 补充：MyBatis
+
+### `#{}`和`${}`的区别
+
+> 参考：/Reference/java面经/MyBatis篇/3
+
+`#{}`是预编译处理，`${}`是字符串替换。
+
+MyBatis在处理`#{}`时会将其替换为`?`，调用`PreparedStatement`的`Set`方法来赋值；MyBatis在处理`${}`时，就是把`${}`替换成变量的值。
+
+使用`#{}`可以有效防止SQL注入，提高系统安全性。
+
+### MyBatis缓存机制
+
+> 参考：/Reference/java面经/MyBatis篇/11
+
+![MyBatis缓存](Spring.assets/MyBatis缓存.jpg)
+
+#### 一级缓存`Local Cache`
+
+在应用运行过程中，有可能在一次数据库会话中执行多次查询条件完全相同的SQL，MyBatis提供了一级缓存的方案优化这部分场景，**如果是相同的SQL语句，会优先命中一级缓存，避免直接对数据库进行查询，提高性能**。
+
+每个`SqlSession`持有`Executor`，每个`Executor`中有一个`Local Cache`。当用户发起查询时，MyBatis根据当前执行的语句生成`MappedStatement`在`Local Cache`进行查询，如果缓存命中，直接返回结果给用户，如果缓存没有命中，查询数据库并将结果写入`Local Cache`，最后返回结果给用户。
+
+![MyBatis一级缓存](Spring.assets/MyBatis一级缓存.jpg)
+
+一级缓存的生命周期和`SqlSession`一致，内部设计简单，只是一个没有容量限定的HashMap，在缓存的功能性上有所欠缺，最大范围是`SqlSession`内部，有多个`SqlSession`或者分布式的环境下，数据库写操作会引起脏数据，所以建议设定缓存级别为`STATEMENT`（共有两种级别：`SESSION`和`STATEMENT`，默认是`SESSION`，即在一个MyBatis会话中执行的所有语句都会共享这一个缓存。`STATEMENT`级别可以理解为缓存只对当前执行的这一个`Statement`有效）。
+
+#### 二级缓存
+
+如果多个`SqlSession`之间需要共享缓存，则需要使用到二级缓存。**开启二级缓存后，会使用`CachingExecutor`装饰`Executor`。进入一级缓存的查询流程前，先在`CachingExecutor`进行二级缓存的查询**。
+
+![MyBatis二级缓存](Spring.assets/MyBatis二级缓存.jpg)
+
+二级缓存开启后，同一个`namespace`下的所有操作语句，都影响着同一个`Cache`，即二级缓存被多个`SqlSession`共享，是一个全局变量。**数据的查询执行的流程为：二级缓存-->一级缓存-->数据库**。
+
+二级缓存相对于一级缓存来说，实现了`SqlSession`之间缓存数据的共享，同时粒度更加细，能够到`namespace`级别，通过`Cache`接口实现类不同的组合，对`Cache`的可控性也更强。MyBatis在多表查询时，极大可能会出现脏数据，有设计上的缺陷，安全使用二级缓存的条件比较苛刻。在分布式环境下，由于默认的MyBatis Cache实现都是基于本地的，分布式环境下必然会读取到脏数据，需要使用集中式缓存将MyBatis 的`Cache`接口实现，有一定的开发成本，直接使用Redis、Memcached等分布式缓存可能成本更低，安全性也更高。
+
+## 补充：Spring Boot
+
+### 如何理解`Starter`？
+
+> 参考：/Reference/java面经/Spring Boot篇/4
+
+#### 什么是`Starter`？
+
+**`Starter`可以理解为启动器，它包含了一系列可以集成到应用里面的依赖包，可以一站式集成Spring及其他技术，而不需要到处找示例代码和依赖包**。例如，使用Spring JPA访问数据库时，只需要加入`spring-boot-starter-data-jpa`启动器依赖就能使用了。Starter包含了许多项目中需要用到的依赖，它们能快速持续的运行，都是一系列得到支持的管理传递性依赖。
+
+#### `Starter`命名
+
+Spring Boot官方启动器都以`spring-boot-starter`开头命名的，代表了一个特定的应用类型。第三
+方启动器不能以`spring-boot`开头命名，它们都被Spring Boot官方保留。
+
+#### `Starter`分类
+
+- 应用类启动器：
+  - `spring-boot-starter`：包含自动配置、日志、YAML的支持。
+  - `spring-boot-starter-web`：使用Spring MVC构建Web工程，默认使用Tomcat容器。
+- 生产启动器：
+  - `spring-boot-starter-actuator`：提供生产环境特性，监控管理应用。
+- 技术类启动器：
+  - `spring-boot-starter-json`：提供对json的读写支持。
+  - `spring-boot-starter-logging`：默认的日志启动器，默认使用Logback。
+
+### 核心配置文件有哪些？
+
+> 参考：/Reference/java面经/Spring Boot篇/13
+
+Spring Boot的核心配置文件是`application`和`bootstrap`。
+
+- `application`配置文件主要用于Spring Boot项目的自动化配置。
+- `bootstrap`配置文件有以下几个应用场景：
+  - 使用Spring Cloud Config配置中心时，需要在`bootstrap`中**添加连接到配置中心的配置属性来加载外部配置中心的配置信息**。
+  - 一些固定的不能被覆盖的属性。
+  - 一些加密/解密的场景。
