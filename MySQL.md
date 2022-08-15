@@ -1162,48 +1162,110 @@ MySQL数据库的**数据备份、主备、主主、主从**都离不开Binlog�
 
 ## 九、InnoDB存储引擎对MVCC的实现:rocket:
 
-> 参考链接：[JavaGuide](https://javaguide.cn/database/mysql/innodb-implementation-of-mvcc.html#mysql-%E5%9F%BA%E7%A1%80)
+### 9.1 前言
 
-### 9.1 一致性非锁定读和锁定读
+#### 什么是MVCC？
 
-#### 一致性非锁定读
+MVCC，全称Multi-Version Concurrency Control，即多版本并发控制。MVCC是一种并发控制的方法，一般在数据库管理系统中，实现对数据库的并发访问，在编程语言中实现事务内存。
 
-对于**一致性非锁定读（Consistent Nonlocking Reads）**的实现，通常做法是**加一个版本号或者时间戳字段**，在更新数据的同时版本号+1或者更新时间戳。**查询时**，将当前可见的版本号与对应记录的版本号进行比对，**如果记录的版本小于可见版本，则表示该记录可见**。
+MVCC在MySQL InnoDB中的实现主要是为了**提高数据库并发性能，用更好的方式去处理读—写冲突（快照读）**，做到即使有读写冲突时，也能做到不加锁，非阻塞并发读。
 
-在InnoDB存储引擎中，**多版本控制（Multi Versioning）就是对非锁定读的实现**。如果读取的行正在执行`DELETE`或`UPDATE`操作，这时读取操作不会去等待行上锁的释放。相反地，InnoDB存储引擎会去读取行的一个快照数据，对于**这种读取历史数据的方式叫快照读（Snapshot Read）**。
+#### 什么是当前读和快照读？
 
-在Repeatable Read和Read Committed两个隔离级别下，如果是执行普通的`select`语句（不包括`select ... lock in share mode`，`select ... for update`）则会**使用一致性非锁定读（MVCC）**。并且在Repeatable Read下MVCC实现了可重复读和**防止部分幻读**。
+##### 当前读
 
-#### 锁定读
+像`select lock in share mode`（共享锁）；`select for update`、`update`、`insert`、`delete`（排他锁）这些操作都是一种当前读，为什么叫当前读？是**因为它读取的是记录的最新版本，读取时还要保证其他并发事务不能修改当前记录，会对读取的记录进行加锁**。
 
-如果执行的是下列语句，就是**锁定读（Locking Reads）**：
+##### 快照读
 
-- `select ... lock in share mode`
-- `select ... for update`
-- `insert`、`update`、`delete` 操作
+**像不加锁的`select`操作就是快照读，即不加锁的非阻塞读**。快照读的前提是**隔离级别不是串行级别，串行级别下的快照读会退化成当前读**。
 
-在锁定读下，**读取的是数据的最新版本**，这种读也被称为**当前读（Current Read）**。锁定读会对读取到的记录加锁：
+之所以出现快照读的情况，是基于提高并发性能的考虑，**快照读的实现是基于多版本并发控制，即MVCC**，可以认为MVCC是行锁的一个变种，但它在很多情况下，避免了加锁操作，降低了开销。
 
-- `select ... lock in share mode`：对记录加`S`锁，其它事务也可以加`S`锁，如果加`x`锁则会被阻塞。
-- `select ... for update`、`insert`、`update`、`delete`：对记录加`X`锁，且其它事务不能加任何锁。
+既然是基于多版本，**快照读可能读到的并不一定是数据的最新版本，而有可能是之前的历史版本**。
 
-在一致性非锁定读下，即使读取的记录已被其它事务加上`X`锁，这时记录也是可以被读取的，即**读取的快照数据**。上面说了，在Repeatable Read下MVCC防止了部分幻读，这里的“部分”是指在一致性非锁定读情况下，**只能读取到第一次查询之前所插入的数据**（根据Read View判断数据可见性，Read View在第一次查询时生成）；但是如果是当前读，每次读取的都是最新数据，**这时如果两次查询中间有其它事务插入数据，就会产生幻读**。所以， **InnoDB在实现Repeatable Read时，如果执行的是当前读，则会对读取的记录使用Next-key Lock，来防止其它事务在间隙间插入数据**。
+#### 当前读、快照读和MVCC的关系
 
-### 9.2 InnoDB对MVCC的实现
+准确的说，MVCC指**“维持一个数据的多个版本，使得读写操作没有冲突”**，仅仅是一个理想概念。在MySQL中实现这么一个概念，需要提供具体的功能，**快照读就是MySQL实现MVCC的其中一个具体非阻塞读功能**。相对而言，**当前读就是悲观锁的具体功能实现**。
 
-MVCC的实现依赖于：**隐藏字段、Read View、undo log**。在内部实现中，**InnoDB通过数据行的`DB_TRX_ID`和Read View来判断数据的可见性，如不可见，则通过数据行的`DB_ROLL_PTR`找到 Undo log中的历史版本**。每个事务读到的数据版本可能是不一样的，在同一个事务中，**用户只能看到该事务创建Read View之前已经提交的修改和该事务本身做的修改**。
+#### MVCC能解决什么问题？
+
+**数据库并发场景有3种**，分别为：
+
+- 读—读：不存在任何问题，也不需要并发控制。
+- 读—写：有线程安全问题，可能会造成事务隔离性问题，可能遇到脏读、不可重复读、幻读等。
+- 写—写：有线程安全问题，可能会存在更新丢失问题，比如第一类更新丢失、第二类更新丢失。
+
+**MVCC是一种用来解决读—写冲突的无锁并发控制**，也就是为事务分配单向增长的时间戳，为每个修改保存一个版本，版本与事务时间戳关联，读操作只读该事务开始前的数据库的快照。 所以MVCC可以为数据库解决以下问题：
+
+- 在并发读写数据库时，**可以做到在读操作时不用阻塞写操作，写操作也不用阻塞读操作**，提高了数据库并发读写的性能。
+- 同时还可以解决脏读、不可重复读、幻读等事务隔离问题，但不能解决更新丢失问题。
+
+#### 总结
+
+简而言之，**MVCC就是针对数据库采用悲观锁这样性能不佳的形式去解决读—写冲突而提出的解决方案**。因为有了MVCC，所以可以形成两个组合：
+
+- **MVCC+悲观锁**：MVCC解决读—写冲突，悲观锁解决写—写冲突。
+- **MVCC+乐观锁**：MVCC解决读—写冲突，乐观锁解决写—写冲突。
+
+这种组合的方式就可以最大程度提高数据库并发性能。
+
+### 9.2 MVCC的实现原理
+
+MVCC的实现原理主要依赖记录中的**隐式字段、Undo log和Read View**。
 
 #### 隐藏字段
 
-在内部，InnoDB存储引擎为每行数据添加了三个隐藏字段：
+每行记录除了自定义的字段外，还有数据库隐式定义的`DB_TRX_ID`、`DB_ROLL_PTR`和`DB_ROW_ID`等字段。
 
-- `DB_TRX_ID（6字节）`：表示**最后一次插入或更新该行的事务id**。此外，`delete`操作在内部被视为更新，只不过会在记录头`Record header`中的`deleted_flag`字段**将其标记为已删除**。
-- `DB_ROLL_PTR（7字节）`：回滚指针，指向该行的Undo log。如果该行未被更新，则为空。
-- `DB_ROW_ID（6字节）`：如果没有设置主键且该表没有唯一非空索引时，InnoDB会使用该id来生成聚簇索引。
+- `DB_TRX_ID`：6 byte，记录创建这条记录或最后一次修改该记录的事务ID。
+- `DB_ROLL_PTR`：7 byte，回滚指针，指向这条记录的上一个版本（存储于Rollback Segment里）。
+- `DB_ROW_ID`：6 byte，隐含的自增ID（隐藏主键），如果数据表没有主键，InnoDB会自动以`DB_ROW_ID`产生一个聚集索引。
+
+![隐藏字段](MySQL.assets/20190313213705258.png)
+
+`DB_ROW_ID`是数据库默认为该行记录生成的唯一隐式主键，`DB_TRX_ID`是当前操作该记录的事务ID，而`DB_ROLL_PTR`是一个回滚指针，用于配合Undo log，指向上一个旧版本。
+
+#### Undo log
+
+Undo log主要分为两种：
+
+- insert undo log：事务在`insert`新记录时产生的Undo log，只在事务回滚时需要，并且在事务提交后可以被立即丢弃。
+- update undo log：事务在进行`update`或`delete`时产生的Undo log。不仅在事务回滚时需要，在快照读时也需要，所以不能随便删除。**只有在快速读或事务回滚不涉及该日志时，对应的日志才会被`purge`线程统一清除**。
+
+**对MVCC有帮助的是update undo log，实际上是存在于Rollback Segment中的旧记录链**，它的执行流程如下：
+
+1. 例如有一个事务在person表插入了一条新记录，隐式主键为1，事务ID和回滚指针假设为`NULL`。
+
+   ![插入新记录](MySQL.assets/20190313213836406.png)
+
+2. 此时事务1对该记录的`name`字段进行了修改，改为`Tom`：
+
+   1. 在事务1修改该行数据时，数据库会先对该行加**排他锁**；
+   2. 然后把该行数据拷贝到Undo log中作为旧记录，即在Undo log中有当前行的拷贝副本；
+   3. 拷贝完毕后，修改该行`name`为`Tom`，并且**修改隐藏字段的事务ID为当前事务1的ID（默认从`1`开始），之后递增。回滚指针指向拷贝到Undo log的副本记录，表示上一个版本**；
+   4. 事务提交后释放锁。
+
+   ![事务1](MySQL.assets/20190313220441831.png)
+
+3. 接着事务2修改person表的同一个记录，将`age`修改为`30`：
+
+   1. 在事务2修改该行数据时，数据库也先为该行加锁；
+   2. 然后把该行数据拷贝到Undo log中作为旧记录，发现该行记录已经有Undo log了，那么**最新的旧数据作为链表的表头，插在该行记录的Undo log最前面**；
+   3. 修改该行`age`为`30`，并且**修改隐藏字段的事务ID为当前事务2的ID（为`2`），回滚指针指向刚刚拷贝到Undo log的副本记录**；
+   4. 事务提交后释放锁。
+
+   ![事务2](MySQL.assets/20190313220528630.png)
+
+可以看出，**不同事务或者相同事务的对同一记录的修改，会导致该记录的Undo log成为一条记录版本线性表（链表），链首就是最新的记录，链尾就是最旧的记录**（其实Undo log的节点可能会被`purge`线程清除掉，例如上述过程中的第一条insert undo log，在事务提交之后就被删除了，以上只是作为演示）。
 
 #### Read View
 
-Read View主要是用来做可见性判断，里面保存了 “当前对本事务不可见的其他活跃事务”，主要有以下字段：
+**Read View就是事务进行快照读操作的时候生产的读视图**。在该事务执行快照读的那一刻，会生成数据库系统当前的一个快照，记录并维护系统当前活跃事务的ID（每个事务开启时都会被分配一个ID，这个ID是递增的，所以越新的事务，其ID值越大）。**所以Read View主要是用来做可见性判断的**，即当某个事务执行快照读的时候，对该记录创建一个Read View，**用来判断当前事务能够看到哪个版本的数据**，既可能是当前最新的数据，也有可能是该行记录的Undo log里某个版本的数据。
+
+**Read View主要有以下字段**：
+
+> 参考链接：[JavaGuide](https://javaguide.cn/database/mysql/innodb-implementation-of-mvcc.html#readview)
 
 ```c
 class ReadView {
@@ -1224,74 +1286,45 @@ private:
 ```
 
 - `m_low_limit_id`：目前出现过的最大的事务ID+1，**即下一个将被分配的事务ID**，**大于等于这个ID的数据版本均不可见**。
-- `m_up_limit_id`：活跃事务列表`m_ids`中**最小的事务ID**，如果`m_ids`为空，则`m_up_limit_id`为`m_low_limit_id`。**小于这个ID的数据版本均可见**。
+- `m_up_limit_id`：活跃事务列表`m_ids`中**最小的事务ID**，如果`m_ids`为空，则`m_up_limit_id`为`m_low_limit_id`，**小于这个ID的数据版本均可见**。
 - `m_ids`：**Read View创建时其他未提交的活跃事务ID列表**。创建Read View时，将**当前未提交事务ID记录下来**，后续即使它们修改了记录行的值，对于当前事务也是不可见的。`m_ids`**不包括当前事务自己和已提交的事务（正在内存中）**。
 - `m_creator_trx_id`：创建该Read View的事务ID。
 
-**事务可见性示意图**：
+##### 可见性算法（`changes_visible`方法）
 
-![事务可见性示意图](MySQL.assets/trans_visible.048192c5.png)
+> 参考链接：[JavaGuide](https://javaguide.cn/database/mysql/innodb-implementation-of-mvcc.html#%E6%95%B0%E6%8D%AE%E5%8F%AF%E8%A7%81%E6%80%A7%E7%AE%97%E6%B3%95)
 
-#### Undo log
-
-Undo log主要有两个作用：
-
-1. 当**事务回滚时用于将数据恢复到修改前**的样子。
-2. 另一个作用是MVCC，当读取记录时，**若该记录被其他事务占用或当前版本对该事务不可见**，则可以通过Undo log读取之前的**版本数据**，以此**实现非锁定读**。
-
-**在InnoDB存储引擎中，Undo log分为两种：`insert undo log`和`update undo log`**：
-
-1. **`insert undo log`**：指在`insert`操作中产生的Undo log。因为`insert`操作的记录**只对事务本身可见，对其他事务不可见**，故该Undo log可以在事务提交后直接删除，不需要进行`purge`操作。
-
-   `insert`时的数据初始状态：
-
-   ![insert数据初始状态](MySQL.assets/317e91e1-1ee1-42ad-9412-9098d5c6a9ad.dc43aed3.png)
-
-2. **`update undo log`**：`update`或`delete`操作中产生的Undo log。该Undo log可能需要提供MVCC机制，**因此不能在事务提交时就进行删除**。提交时放入Undo log链表，等待`purge`线程进行最后的删除。
-
-   数据第一次被修改时：
-
-   ![数据第一次被修改时](MySQL.assets/c52ff79f-10e6-46cb-b5d4-3c9cbcc1934a.b60a6e78.png)
-
-   数据第二次被修改时：
-
-   ![数据第二次被修改时](MySQL.assets/6a276e7a-b0da-4c7b-bdf7-c0c7b7b3b31c.2e496ea1.png)
-
-不同事务或者相同事务的**对同一记录行的修改**，会使该记录行的Undo log成为一条链表，**链首就是最新的记录，链尾就是最早的旧记录**。
-
-#### 数据可见性算法
-
-在InnoDB存储引擎中，创建一个新事务后，执行每个`select`语句前，都会创建一个Read View，**里面保存了当前数据库系统中正处于活跃（没有`commit`）的事务ID**。其实简单地说**保存的是系统中当前不应该被本事务看到的其他事务ID列表（即`m_ids`）**。当用户在这个事务中要读取某个记录行的时候，InnoDB会将**该记录行的`DB_TRX_ID`与`Read View`中的一些变量与当前事务ID进行比较**，判断是否满足可见性条件：
-
-1. 如果记录的`DB_TRX_ID`<`m_up_limit_id`，那么表明**最新修改该行的事务（DB_TRX_ID）在当前事务创建快照之前就提交了**，所以该记录行的值**对当前事务是可见的**；
-2. 如果`DB_TRX_ID`>=`m_low_limit_id`，那么表明**最新修改该行的事务（DB_TRX_ID）在当前事务创建快照之后才修改该行**，所以该记录行的值**对当前事务不可见**，跳到步骤5；
+1. 如果记录的`DB_TRX_ID`<`m_up_limit_id`，那么表明**最新修改该行的事务（`DB_TRX_ID`）在当前事务创建快照之前就提交了**，所以该记录行的值**对当前事务是可见的**；
+2. 如果`DB_TRX_ID`>=`m_low_limit_id`，那么表明**最新修改该行的事务（`DB_TRX_ID`）在当前事务创建快照之后才修改该行**，所以该记录行的值**对当前事务不可见**，跳到步骤5；
 3. `m_ids`为空，则表明**在当前事务创建快照之前，修改该行的事务就已经提交了**，所以该记录行的值**对当前事务是可见的**；
-4. 如果`m_up_limit_id`<=`DB_TRX_ID`<`m_low_limit_id`，表明**最新修改该行的事务（DB_TRX_ID）在当前事务创建快照的时候可能处于“活动状态”或者“已提交状态”**，所以就要对活跃事务列表`m_ids`进行查找（**源码中是用的二分查找，因为是有序的**）；
+4. 如果`m_up_limit_id`<=`DB_TRX_ID`<`m_low_limit_id`，表明**最新修改该行的事务（`DB_TRX_ID`）在当前事务创建快照的时候可能处于“活动状态”或者“已提交状态”**，所以就要对活跃事务列表`m_ids`进行查找（**源码中是用的二分查找，因为是有序的**）；
    - 如果在活跃事务列表`m_ids`中能找到`DB_TRX_ID`，表明：①在当前事务创建快照前，**该记录行的值被事务DB_TRX_ID修改了，但没有提交**；②在当前事务创建快照后，**该记录行的值被事务DB_TRX_ID修改了**。这些情况下，这个记录行的值**对当前事务都是不可见的**，跳到步骤5；
    - 在活跃事务列表中找不到，则表明**事务DB_TRX_ID在修改该记录行的值后、在当前事务创建快照前就已经提交了**，所以**记录行对当前事务可见**。
 5. 在该记录行的`DB_ROLL_PTR`指针所指向的Undo log取出快照记录，用快照记录的`DB_TRX_ID`回到步骤1重新开始判断，**直到找到满足的快照版本或返回空**。
 
-### 9.3 “读已提交”和“可重复读”隔离级别下MVCC的差异
+#### RC和RR级别下快照读的区别
 
-在事务隔离级别“读已提交”和“可重复读”（InnoDB 存储引擎的默认事务隔离级别）下，InnoDB存储引擎使用MVCC（非锁定一致性读），但它们生成Read View的时机却不同：
+> 参考链接：[JavaGuide](https://javaguide.cn/database/mysql/innodb-implementation-of-mvcc.html#rc-%E5%92%8C-rr-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E4%B8%8B-mvcc-%E7%9A%84%E5%B7%AE%E5%BC%82)
 
-- 在“读已提交”隔离级别下：**每次**`select`查询前都生成一个Read View（`m_ids`列表）。
+- RC级别下：**每次**快照读（普通`select`查询）都生成一个Read View（`m_ids`列表）。
 
-- 在“可重复读”隔离级别下：只在事务开始后，**第一次**`select`查询数据前生成一个Read View（`m_ids` 列表）。
+- RR级别下：在事务开始后，**第一次**快照读（普通`select`查询）生成一个Read View（`m_ids` 列表）。
 
-### 9.4 MVCC解决不可重复读问题
+#### 整体流程演示
+
+> 参考链接：[JavaGuide](https://javaguide.cn/database/mysql/innodb-implementation-of-mvcc.html#mvcc-%E8%A7%A3%E5%86%B3%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%E9%97%AE%E9%A2%98)
 
 举个例子：
 
 ![例子](MySQL.assets/6fb2b9a1-5f14-4dec-a797-e4cf388ed413.ea9e47d7.png)
 
-#### 在”读已提交“下Read View生成情况
+##### 在RC级别下Read View生成情况
 
 **假设时间线来到T4**，那么此时数据行`id = 1`的版本链为：
 
 ![T4 id=1版本链](MySQL.assets/a3fd1ec6-8f37-42fa-b090-7446d488fd04.bf41f07c.png)
 
-由于”读已提交“级别下每次查询都会生成Read View，并且事务101、102并未提交，此时103事务生成的Read View中活跃的事务`m_ids`为：[101,102]，`m_low_limit_id`为：104，`m_up_limit_id`为：101，`m_creator_trx_id` 为：103。
+由于RC级别下每次查询都会生成Read View，并且事务101、102并未提交，此时103事务生成的Read View中活跃的事务`m_ids`为：[101,102]，`m_low_limit_id`为：104，`m_up_limit_id`为：101，`m_creator_trx_id` 为：103。
 
 1. 此时最新记录`DB_TRX_ID`为101，`m_up_limit_id`<=101<`m_low_limit_id`，所以要在`m_ids`列表中查找，发现`DB_TRX_ID`存在列表中，那么这个记录不可见；
 2. 根据`DB_ROLL_PTR`找到Undo log中的上一版本记录，上一条记录的`DB_TRX_ID`还是101，依旧不可见；
@@ -1301,7 +1334,7 @@ Undo log主要有两个作用：
 
 ![T6 id=1版本链](MySQL.assets/528559e9-dae8-4d14-b78d-a5b657c88391.2ff79120.png)
 
-由于在”读已提交“级别下，会重新生成Read View，这时事务101已经提交，102并未提交，所以此时Read View中活跃的事务`m_ids`为：[102]，`m_low_limit_id`为：104，`m_up_limit_id`为：102，`m_creator_trx_id`为：103。
+由于在RC级别下，会重新生成Read View，这时事务101已经提交，102并未提交，所以此时Read View中活跃的事务`m_ids`为：[102]，`m_low_limit_id`为：104，`m_up_limit_id`为：102，`m_creator_trx_id`为：103。
 
 1. 此时最新记录`DB_TRX_ID`为102，`m_up_limit_id`<=102<`m_low_limit_id`，所以要在`m_ids`列表中查找，发现`DB_TRX_ID`存在列表中，那么这个记录不可见；
 2. 根据`DB_ROLL_PTR`找到Undo log中的上一版本记录，上一条记录的`DB_TRX_ID`为101，满足101<`m_up_limit_id`，记录可见，所以在T6时间点查询到数据为`name = 李四`，与时间T4查询到的结果不一致，”不可重复读“问题出现！
@@ -1314,9 +1347,9 @@ Undo log主要有两个作用：
 
 ##### 总结
 
-在”读已提交“隔离级别下，事务**在每次查询开始时都会生成并设置新的Read View**，所以**导致不可重复读**。
+在RC级别下，事务**在每次查询开始时都会生成并设置新的Read View**，所以**导致不可重复读**。
 
-#### 在”可重复读“下Read View生成情况
+##### 在RR级别下Read View生成情况
 
 **时间线T4**，数据的版本链为：
 
@@ -1332,7 +1365,7 @@ Undo log主要有两个作用：
 
 ![T6 id=1版本链](MySQL.assets/79ed6142-7664-4e0b-9023-cf546586aa39.9c5cd303.png)
 
-在”可重复读“级别下只会生成一次Read View，所以此时依然沿用`m_ids`为：[101,102]，`m_low_limit_id`为：104，`m_up_limit_id`为：101，`m_creator_trx_id`为：103。
+在RR级别下只会生成一次Read View，所以此时依然沿用`m_ids`为：[101,102]，`m_low_limit_id`为：104，`m_up_limit_id`为：101，`m_creator_trx_id`为：103。
 
 1. 最新记录的`DB_TRX_ID`为102，`m_up_limit_id`<=102<`m_low_limit_id`，所以要在`m_ids`列表中查找，发现`DB_TRX_ID`存在列表中，那么这个记录不可见；
 2. 根据`DB_ROLL_PTR`找到Undo log中的上一版本记录，上一条记录的`DB_TRX_ID`为101，记录不可见；
@@ -1345,19 +1378,16 @@ Undo log主要有两个作用：
 
 此时情况跟T6完全一样，由于Read View不会改变，所以查询结果依然是`name = 菜花`。
 
-### 9.5 MVCC+Next-key Lock防止幻读
+### 9.3 MVCC+Next-key Lock防止幻读
 
-InnoDB存储引擎在“可重复读”级别下通过MVCC和Next-key Lock来解决幻读问题：
+> 参考链接：[JavaGuide](https://javaguide.cn/database/mysql/innodb-implementation-of-mvcc.html#mvcc%E2%9E%95next-key-lock-%E9%98%B2%E6%AD%A2%E5%B9%BB%E8%AF%BB)
 
-1. 执行普通`select`，此时会以MVCC**快照读**的方式读取数据。
+InnoDB存储引擎在RC级别下通过MVCC和Next-key Lock来解决幻读问题：
 
-   在快照读的情况下，“可重复读”隔离级别只会在事务开启后的第一次查询生成Read View，一直使用至事务提交。所以在生成Read View之后其它事务所做的更新、插入记录版本对当前事务并不可见，实现了可重复读和防止快照读下的 “幻读”。
+- 执行普通`select`，此时会以**快照读**的方式读取数据。在快照读的情况下，RC只会在事务开启后的第一次查询生成Read View，一直使用至事务提交。**所以在生成Read View之后其它事务所做的更新、插入记录版本对当前事务并不可见，实现了可重复读和防止快照读下的幻读**。
+- 执行`select...for update/lock in share mode`、`insert`、`update`、`delete`，此时会以**当前读**的方式读取数据。在当前读下，读取的都是最新的数据，如果其它事务有插入新的记录，并且刚好在当前事务查询范围内，就会产生幻读。InnoDB使用Next-key Lock来防止这种情况：**当执行当前读时，会锁定读取到的记录的同时，锁定它们的间隙，防止其它事务在查询范围内插入数据**，就不会发生幻读。
 
-2. 执行`select...for update/lock in share mode`、`insert`、`update`、`delete`等当前读。
-
-   在当前读下，读取的都是最新的数据，如果其它事务有插入新的记录，并且刚好在当前事务查询范围内，就会产生幻读。InnoDB使用Next-key Lock来防止这种情况。**当执行当前读时，会锁定读取到的记录的同时，锁定它们的间隙，防止其它事务在查询范围内插入数据**，就不会发生幻读。
-
-### 9.6 总结（自己）:rocket:
+### 9.4 总结（自己）
 
 ![总结](MySQL.assets/InnoDB对MVCC的实现.png)
 
