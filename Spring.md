@@ -203,8 +203,8 @@ Spring容器可以管理`singleton`作用域Bean的生命周期。在此作用�
 9. 如果在配置文件中通过`init-method`属性指定了初始化方法，则调用该初始化方法；
 10. 如果`BeanPostProcessor`和Bean关联，则Spring将调用该接口的初始化方法`postProcessAfterInitialization()`。此时，**Bean初始化（Initialization）完成**，已经可以被应用系统使用了；
 11. 如果在`<bean>`中指定了该Bean的作用范围为`scope="singleton"`，则将该Bean放入Spring IoC的**缓存池**中，触发Spring对该Bean的**生命周期管理**；如果在`<bean>`中指定了该Bean的作用范围为`scope="prototype"`，则将该Bean交给调用者，由调用者管理该Bean的生命周期，Spring不再管理该Bean；
-12. 如果Bean实现了`DisposableBean`接口，则Spring会调用`destory()`方法将Spring中的Bean销毁（或者执行有`@PreDestroy`注解的方法）；
-13. 如果在配置文件中通过`destory-method`属性指定了Bean的销毁方法，则Spring将调用该方法对Bean进行销毁。
+12. 如果Bean实现了`DisposableBean`接口，则Spring会调用`destroy()`方法将Spring中的Bean销毁（或者执行有`@PreDestroy`注解的方法）；
+13. 如果在配置文件中通过`destroy-method`属性指定了Bean的销毁方法，则Spring将调用该方法对Bean进行销毁。
 
 **Bean的完整生命周期经历了各种方法调用，这些方法可以划分为以下几类**：（需要结合上图）
 
