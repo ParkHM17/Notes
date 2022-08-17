@@ -1,16 +1,16 @@
-# Java SE
+# Java
 
 ## 一、基础概念与常识
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-01.html#%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5%E4%B8%8E%E5%B8%B8%E8%AF%86)
 
-### 1.1 JVM vs JDK vs JRE:airplane:
+### 1.1 JVM、JDK和JRE
 
 JVM是运行Java字节码的**虚拟机**。JVM有针对不同系统的特定实现，目的是**使用相同的字节码，它们都会给出相同的结果**。实现“一次编译，到处运行”的关键。**JVM并不是只有一种**！
 
 JDK（Java Development Kit）：功能齐全的**Java SDK**，**拥有JRE所拥有的一切**，还有编译器（javac）和工具（如javadoc和jdb）。它能够**创建**和**编译**程序。
 
-JRE（Java Runtime Environment）：Java运行时环境。它是**运行已编译的Java程序所需的所有内容的集合**，包括JVM，Java类库，java命令和其他的一些基础构件，**但是它不能用于创建新程序**。
+JRE（Java Runtime Environment）：Java运行时环境。它是**运行已编译的Java程序所需的所有内容的集合**，包括JVM、Java类库、Java命令和其他的一些基础构件，**但是它不能用于创建新程序**。
 
 ### 1.2 什么是字节码？采用字节码的好处？
 
@@ -18,7 +18,7 @@ JRE（Java Runtime Environment）：Java运行时环境。它是**运行已编�
 
 **Java程序从源代码到运行的过程如下图所示**：
 
-![Java程序流程](JavaSE.assets/java程序转变为机器代码的过程.3af43aee.png)
+![Java程序流程](Java.assets/java程序转变为机器代码的过程.3af43aee.png)
 
 需要格外注意的是`.class->机器码`这一步。在这一步JVM类加载器首先加载字节码文件，然后通过解释器逐行解释执行，这种方式的执行速度会相对比较慢。而且，有些方法和代码块是经常需要被调用的（也就是所谓的热点代码)，所以后面引进了JIT（Just-in-time Compilation） 编译器，而JIT属于运行时编译。**当JIT编译器完成第一次编译后，其会将字节码对应的机器码保存下来，下次可以直接使用**，机器码的运行效率肯定是高于Java解释器的，这也解释了为什么经常会说**Java是编译与解释共存的语言** 。
 
@@ -29,7 +29,7 @@ JRE（Java Runtime Environment）：Java运行时环境。它是**运行已编�
 - **编译型**：**编译型语言将源代码一次性翻译成可被该平台执行的机器码**。一般情况下，编译语言的执行速度比较快，开发效率比较低。常见的编译性语言有C、C++、Go、Rust等等。
 - **解释型**：**解释型语言一句一句的将代码解释（Interpret）为机器代码后再执行**。解释型语言开发效率比较快，执行速度比较慢。常见的解释性语言有Python、JavaScript、PHP等等。
 
-![编译型和解释型](JavaSE.assets/编译型语言和解释型语言.9908e5e6.png)
+![编译型和解释型](Java.assets/编译型语言和解释型语言.9908e5e6.png)
 
 **为什么说Java语言“编译与解释并存”**？
 
@@ -59,19 +59,19 @@ JRE（Java Runtime Environment）：Java运行时环境。它是**运行已编�
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-01.html#%E5%9F%BA%E6%9C%AC%E8%AF%AD%E6%B3%95)
 
-### 2.1 Java关键字
+### 2.1 关键字
 
 |         分类         |                            关键字                            |
 | :------------------: | :----------------------------------------------------------: |
 |       访问控制       |                `private` `protected` `public`                |
-| 类、方法和变量修饰符 |                      `abstract` `final`                      |
+| 类、方法和变量修饰符 | `abstract` `interface` `class` `final` `implements` `extends` |
 |       基本类型       | `int` `byte` `short` `long` `float` `double` `boolean` `char` |
 |        保留字        |                        `goto` `const`                        |
 |          …           |                              …                               |
 
 说明：
 
-- 所有的关键字都是小写。
+- **所有的关键字都是小写**。
 - `default`这个关键字很特殊，既属于程序控制，也属于类，方法和变量修饰符，还属于访问控制。
   - 在程序控制中，当`switch`中匹配不到任何情况时，可以使用`default`来编写默认匹配的情况。
   - 在类，方法和变量修饰符中，从JDK 8开始引入了默认方法，可以使用`default`关键字来定义一个方法的默认实现。
@@ -84,18 +84,18 @@ JRE（Java Runtime Environment）：Java运行时环境。它是**运行已编�
 
 > 参考链接：[CSDN](https://blog.csdn.net/qq_26707371/article/details/101467664)
 
-|          |                           成员变量                           |                          局部变量                           |
-| :------: | :----------------------------------------------------------: | :---------------------------------------------------------: |
-| 语法形式 | 属于类，可以被访问控制修饰符、`static`（静态变量）、`final`等修饰 | 在代码块或方法中定义的变量或是方法的参数，可以被`final`修饰 |
-| 存储方式 |              堆（JDK 1.7前，静态变量在方法区）               |                             栈                              |
-| 生存时间 |       从对象创建（类加载）开始到对象销毁（类卸载）结束       |                  跟随方法的调用开始和结束                   |
-|  默认值  | 自动以**类型的默认值**而赋值（如果被`final`修饰，必须显式赋值） |                        不会自动赋值                         |
+|          |                           成员变量                           |                           局部变量                           |
+| :------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
+| 语法形式 | 属于类，可以被访问控制修饰符、`static`（静态变量）、`final`等修饰 | 在代码块和方法中定义的变量，或者是方法的参数，可以被`final`修饰 |
+| 存储方式 |              堆（JDK 1.7前，静态变量在方法区）               |                              栈                              |
+| 生存时间 |       从对象创建（类加载）开始到对象销毁（类卸载）结束       |                   跟随方法的调用开始和结束                   |
+|  默认值  | 自动以**类型的默认值**而赋值（如果被`final`修饰，必须显式赋值） |                         不会自动赋值                         |
 
 ### 2.3 方法
 
 #### 静态方法为什么不能调用非静态成员？:airplane:
 
-这个需要结合JVM的相关知识，主要原因如下：
+主要原因如下：
 
 - **静态方法是属于类的**，在类加载的时候就会分配内存，可以通过类名直接访问；**而非静态成员属于实例对象**，**只有在对象实例化之后才存在**，需要通过类的实例对象去访问。
 - 在类的非静态成员不存在的时候静态成员就已经存在了，此时**调用在内存中还不存在的非静态成员，属于非法操作**。
@@ -133,7 +133,7 @@ Java中将实参传递给方法的方式是**值传递**：
 
 ### 3.1 8种基本数据类型
 
-| 基本类型  | 位数 |                  取值范围                  |   包装类    |
+| 基本类型  | 位数 |                  取值范围                  |  包装类型   |
 | :-------: | :--: | :----------------------------------------: | :---------: |
 |   `int`   |  32  |          -2147483648 ~ 2147483647          |  `Integer`  |
 |  `byte`   |  8   |                 -128 ~ 127                 |   `Byte`    |
@@ -150,13 +150,14 @@ Java中将实参传递给方法的方式是**值传递**：
 
 - 作为成员变量，包装类型不赋值就是`null`，而基本类型有默认值且不为`null`。
 - 包装类型可用于**泛型**，而基本类型不可以。
+- **基本数据类型作为局部变量存放在JVM虚拟机栈的局部变量表中，作为成员变量存放在JVM堆中**；包装类型存放在堆中。
 - 相比于对象类型， 基本数据类型占用的空间非常小。
 
 ### 3.3 包装类型的缓存机制:airplane:
 
-Java**包装类型的大部分都用到了缓存机制来提升性能**。`Byte`、`Short`、`Integer`、`Long`这4种包装类默认创建了数值**[-128，127]**的相应类型的缓存数据，`Character`创建了数值在**[0,127]**范围的缓存数据，`Boolean`直接返回`True`or`False`。两种浮点数类型的包装类`Float`和`Double`并没有实现缓存机制。
+Java**包装类型的大部分都用到了缓存机制来提升性能**。`Integer`、`Byte`、`Short`、`Long`创建了数值在$[-128,127]$范围内的相应类型的缓存数据，`Character`创建了数值在$[0,127]$范围的缓存数据，`Boolean`直接返回`True`或者`False`。两种浮点数类型的包装类`Float`和`Double`并没有实现缓存机制。
 
-如果超出对应范围仍然会去创建新的对象，缓存的范围区间的大小只是**在性能和资源之间的权衡**。
+如果超出对应范围仍然会去创建新的对象，**缓存的范围区间的大小只是在性能和资源之间的权衡**。
 
 ```java
 Integer i1 = 33;
@@ -179,7 +180,7 @@ System.out.println(i1==i2);
 
 `Integer i1 = 40`这一行代码会发生装箱，也就是说这行代码等价于`Integer i1 = Integer.valueOf(40)` ，`i1`直接使用的是**缓存中的对象**，而`Integer i2 = new Integer(40)`是会直接**创建一个新的对象**。
 
-所以记住：**所有整型包装类对象之间值的比较，推荐使用`.equals()`方法比较**。
+所以记住：**所有整型包装类对象之间值的比较，推荐使用`equals()`方法**。
 
 ### 3.4 自动装箱与拆箱的原理
 
@@ -222,7 +223,25 @@ int n = i;   //拆箱
     RETURN
 ```
 
-从字节码中发现，装箱其实就是调用了包装类的`valueOf()`方法，拆箱其实就是调用了`xxxValue()`方法。注意：**如果频繁拆装箱的话，也会严重影响系统的性能**，应该尽量避免不必要的拆装箱操作。
+从字节码中发现，**装箱和拆箱其实就是分别调用了包装类的`valueOf()`和`xxxValue()`方法**。注意：**如果频繁拆装箱的话，也会严重影响系统的性能**，应该尽量避免不必要的拆装箱操作。
+
+### 3.5 为什么浮点数运算会有精度丢失的风险？:airplane:
+
+演示：
+
+```java
+float a = 2.0f - 1.9f;
+float b = 1.8f - 1.7f;
+System.out.println(a);// 0.100000024
+System.out.println(b);// 0.099999905
+System.out.println(a == b);// false
+```
+
+这个和计算机保存浮点数的机制有很大关系。**计算机是二进制的，而且计算机在表示一个数字时宽度是有限的，无限循环的小数只能被截断，所以就会导致小数精度发生损失的情况**。这也就是解释了为什么浮点数没有办法用二进制精确表示。
+
+#### 如何解决？
+
+**`BigDecimal`可以实现对浮点数的运算，不会造成精度丢失**。通常情况下，需要浮点数精确运算结果的业务场景（涉及到钱的场景）都是通过`BigDecimal`来做的。
 
 ## 四、面向对象基础
 
@@ -254,7 +273,7 @@ int n = i;   //拆箱
 - 引用类型变量发出的方法调用的到底是哪个类中的方法，必须在程序运行期间才能确定。如果子类重写了父类的方法，真正执行的是**子类覆盖的方法**，如果子类没有覆盖父类的方法，执行的是父类的方法。
 - 多态**不能调用“只在子类存在但在父类不存在”的方法（子类扩展的方法）**。
 
-### 4.2 接口和抽象类有什么共同点和不同点？
+### 4.2 接口和抽象类的区别？:airplane:
 
 |                  |                             接口                             |                           抽象类                            |
 | :--------------: | :----------------------------------------------------------: | :---------------------------------------------------------: |
@@ -271,9 +290,9 @@ int n = i;   //拆箱
 | :--: | :----------------------------------------------------------: | :--------------------------------------------------: | :--------------------------: |
 | 内容 | 会在堆上创建一个新的对象。**如果原对象内部的属性是引用类型的话，会直接复制内部对象的引用地址**，也就是说拷贝对象和原对象**共用**同一个内部对象 | 会**完全复制**整个对象，包括这个对象所包含的内部对象 | 两个不同的引用指向同一个对象 |
 
-![深拷贝、浅拷贝和引用拷贝](JavaSE.assets/shallow&deep-copy.8d5a2e45.png)
+![深拷贝、浅拷贝和引用拷贝](Java.assets/shallow&deep-copy.8d5a2e45.png)
 
-## 五、Java常用类
+## 五、常用类
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-02.html#java-%E5%B8%B8%E8%A7%81%E7%B1%BB)
 
@@ -298,7 +317,7 @@ int n = i;   //拆箱
 |              |       `==`       |                          `equals()`                          |
 | :----------: | :--------------: | :----------------------------------------------------------: |
 | 基本数据类型 |    比较**值**    |                             :x:                              |
-| 引用数据类型 | 比较**内存地址** | 没有重写：使用的是父类Object的`equals()`方法，等价于`==`<br />重写：重写`equals()`方法来比较两个对象中的**属性是否相等** |
+| 引用数据类型 | 比较**内存地址** | 没有重写：使用的是父类Object的`equals()`方法，等价于`==`<br />重写：比较两个对象中的**属性是否相等** |
 
 举例说明：
 
@@ -391,7 +410,7 @@ public final class String implements java.io.Serializable, Comparable<String>, C
 }
 ```
 
-`String`真正不可变的原因：
+**`String`真正不可变的原因**：
 
 - 保存字符串的数组被`private`修饰，而且`String`类没有提供/暴露修改这个字符串的方法。
 - `String`类被`final`修饰导致其不能被继承，进而避免了子类破坏`String`不可变。
@@ -409,7 +428,7 @@ String str4 = str1 + str2 + str3;
 
 上面代码对应的字节码如下：
 
-![字节码文件](JavaSE.assets/image-20220422161637929.png)
+![字节码文件](Java.assets/image-20220422161637929.png)
 
 可以看出，字符串对象使用`+`的拼接方式，实际上是通过`StringBuilder`调用`append()`方法实现的，拼接完成之后调用`toString()`得到一个`String`对象 。不过，在循环内使用`+`进行字符串拼接的话，存在比较明显的缺陷：**编译器会导致创建过多的`StringBuilder`对象，而不会创建单个以复用**。
 
@@ -422,7 +441,7 @@ for (int i = 0; i < arr.length; i++) {
 System.out.println(s);
 ```
 
-![循环中使用"+"拼接字符串](JavaSE.assets/image-20220422161320823.png)
+![循环中使用"+"拼接字符串](Java.assets/image-20220422161320823.png)
 
 #### 字符串常量池的作用？
 
@@ -439,7 +458,7 @@ System.out.println(aa==bb);// true
 
 #### `intern()`方法的作用？
 
-`String.intern()`是一个`native`方法，其作用是**将指定的字符串对象的引用保存在字符串常量池中**，可以简单分为两种情况：
+`String.intern()`是一个native方法，其作用是**将指定的字符串对象的引用保存在字符串常量池中**，可以简单分为两种情况：
 
 - 如果字符串常量池中保存了对应的字符串对象的引用，就直接返回该引用。
 - 如果字符串常量池中没有保存对应的字符串对象的引用，那就在常量池中创建一个指向该字符串对象的引用并返回。
@@ -509,14 +528,14 @@ System.out.println(c == d);// true
 
 Java异常类层次结构图：
 
-![异常类层次结构](JavaSE.assets/types-of-exceptions-in-java.75041da9.png)
+![异常类层次结构](Java.assets/types-of-exceptions-in-java.75041da9.png)
 
 ### 6.1 `Exception`和`Error`有什么区别？:airplane:
 
-在Java中，所有异常都有一个共同的祖先，即`java.lang`包中的`Throwable`类，它有两个重要的子类：
+所有异常都有一个共同的祖先，即`java.lang`包中的`Throwable`类，它有两个重要的子类：
 
-- **`Exception`**：程序本身可以处理的异常，可以通过`catch`来进行捕获。`Exception`又可以分为Checked Exception（受检查异常，必须处理）和Unchecked Exception（不受检查异常，可以不处理）。
-- **`Error`**：`Error`属于程序无法处理的错误 ，不建议通过`catch`捕获 。例如Java虚拟机运行错误`Virtual MachineError`、虚拟机内存不够错误`OutOfMemoryError`、类定义错误`NoClassDefFoundError`等 。这些异常发生时，JVM一般会选择终止线程。
+- **`Exception`**：**程序本身可以处理的异常，可以通过`catch`来进行捕获**。`Exception`又可以分为Checked Exception（受检查异常，必须处理）和Unchecked Exception（不受检查异常，可以不处理）。
+- **`Error`**：**程序无法处理的错误 ，不建议通过`catch`捕获**。例如Java虚拟机运行错误`Virtual MachineError`、虚拟机内存不够错误`OutOfMemoryError`、类定义错误`NoClassDefFoundError`等 。这些异常发生时，JVM一般会选择终止线程。
 
 ### 6.2 Checked Exception和Unchecked Exception的区别？
 
@@ -540,9 +559,17 @@ Java异常类层次结构图：
 - `String getLocalizedMessage()`：返回异常对象的本地化信息。使用`Throwable`的子类覆盖这个方法，可以生成本地化信息。如果子类没有覆盖该方法，则该方法返回的信息与`getMessage()`返回的结果相同。
 - `void printStackTrace()`：在控制台上打印`Throwable`对象封装的异常信息。
 
-### 6.4 `finally`块中的代码一定会被执行吗？:airplane:
+### 6.4 `try-catch-finally`如何使用？
 
-不一定，在某些情况下，`finally`中的代码不会被执行，例如在`finally`之前虚拟机被终止运行的话，块中的代码就不会被执行。
+- `try`块：用于捕获异常。其后可接零个或多个`catch`块，如果没有`catch`块，则必须跟一个`finally`块。
+- `catch`块：用于处理`try`捕获到的异常。
+- `finally`块：无论是否捕获或处理异常，`finally`块里的语句都会被执行。当在`try`块或`catch`块中遇到`return`语句时，`finally`语句块将在方法返回之前被执行。
+
+**注意：不要在`finally`块中使用`return`**。当`try`语句和`finally`语句中都有`return`语句时，`try`语句块中的`return`语句会被忽略。这是因为`try`语句中的`return`返回值会先被暂存在一个本地变量中，当执行到`finally`语句中的`return`之后，这个本地变量的值就变为了`finally`语句中的`return`返回值。
+
+### 6.5 `finally`块中的代码一定会被执行吗？:airplane:
+
+不一定，在某些情况下，`finally`中的代码不会被执行，例如**在`finally`之前虚拟机被终止运行的话，块中的代码就不会被执行**。
 
 ```java
 try {
@@ -563,8 +590,8 @@ try {
 
 另外，在以下2种特殊情况下，`finally`块中代码也不会被执行：
 
-- 程序所在的线程死亡。
-- 关闭CPU。
+- **程序所在的线程死亡**。
+- **关闭CPU**。
 
 ## 七、泛型&反射&注解
 
@@ -572,9 +599,9 @@ try {
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#%E6%B3%9B%E5%9E%8B)
 
-#### 什么是泛型？
+#### 什么是泛型？有什么作用？
 
-**Java泛型（Generics）**是JDK 5中引入的一个新特性。使用泛型参数，可以增强代码的可读性以及稳定性。编译器可以对泛型参数进行检测，并且通过泛型参数可以**指定传入的对象类型**。比如`ArrayList<Person> persons = new ArrayList<Person>()`这行代码就指明了该`ArrayList`对象只能传入`Person`对象，如果传入其他类型的对象就会报错。
+**Java泛型（Generics）**是JDK 5中引入的一个新特性。**使用泛型参数，可以增强代码的可读性以及稳定性**。编译器可以对泛型参数进行检测，并且通过泛型参数可以**指定传入的对象类型**。比如`ArrayList<Person> persons = new ArrayList<Person>()`这行代码就指明了该`ArrayList`对象只能传入`Person`对象，如果传入其他类型的对象就会报错。
 
 ```java
 ArrayList<E> extends AbstractList<E>
@@ -666,7 +693,7 @@ printArray(stringArray);
 
 ### 7.2 反射
 
-> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/java-basic-questions-03.html#%E5%8F%8D%E5%B0%84)、[JavaGuide](https://javaguide.cn/java/basis/reflection.html)
+> 参考链接：[JavaGuide](https://javaguide.cn/java/basis/reflection.html)
 
 #### 何为反射？
 
@@ -778,7 +805,7 @@ public interface Override extends Annotation{
 
 序列化的主要目的是**通过网络传输对象或者说是将对象存储到文件系统、数据库、内存中。**
 
-![I/O](JavaSE.assets/a478c74d-2c48-40ae-9374-87aacf05188c.png)
+![I/O](Java.assets/a478c74d-2c48-40ae-9374-87aacf05188c.png)
 
 ### 8.2 序列化协议对应TCP/IP4层模型的哪一层？
 
@@ -786,7 +813,7 @@ public interface Override extends Annotation{
 
 OSI七层模型中，表示层做的事情主要就是对应用层的用户数据进行处理转换为二进制流。反过来的话，就是将二进制流转换成应用层的用户数据。
 
-![OSI七层模型](JavaSE.assets/6ecb84cd-4227-4c7b-a2e8-b77054604400-20200802201216504.png)
+![OSI七层模型](Java.assets/6ecb84cd-4227-4c7b-a2e8-b77054604400-20200802201216504.png)
 
 OSI七层协议模型中的应用层、表示层和会话层对应的都是TCP/IP四层模型中的应用层，所以**序列化协议属于TCP/IP协议应用层的一部分**。
 
@@ -808,7 +835,7 @@ OSI七层协议模型中的应用层、表示层和会话层对应的都是TCP/I
 
 JDK自带的序列化方式一般不会用，**因为序列化效率低并且部分版本有安全漏洞**。比较常用的序列化协议有hessian、kyro、protostuff。
 
-### 8.5 I/O流简介
+### 8.5 I/O流简介:airplane:
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/io/io-basis.html)
 
@@ -835,7 +862,7 @@ Java I/O流的40多个类都是从如下4个抽象类基类中派生出来的。
 
 所以，I/O流就提供了一个直接操作字符的接口，方便平时对字符进行流操作。如果音频文件、图片等**媒体文件用字节流比较好**，如果涉及到字符的话使用字符流比较好。
 
-### 8.6 I/O模型
+### 8.6 I/O模型:rocket:
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/io/io-model.html#i-o)
 
@@ -856,13 +883,13 @@ Java I/O流的40多个类都是从如下4个抽象类基类中派生出来的。
 
 UNIX系统下，I/O模型一共有5种：**同步阻塞I/O**、**同步非阻塞I/O**、**I/O多路复用**、**信号驱动I/O** 和**异步I/O**。
 
-#### Java中常见的3种I/O模型:airplane:
+#### Java中常见的3种I/O模型
 
 ##### BIO（Blocking I/O）
 
 **BIO属于同步阻塞I/O模型** 。同步阻塞IO模型中，应用程序发起`read`调用后，会一直阻塞，**直到内核把数据拷贝到用户空间**。
 
-![同步阻塞](JavaSE.assets/微信截图_20220705104817.png)
+![同步阻塞](Java.assets/微信截图_20220705104817.png)
 
 在客户端连接数量不高的情况下是没问题的。但是当面对十万甚至百万级连接的时候，传统的BIO模型是无能为力的。因此需要一种更高效的I/O处理模型来应对更高的并发量。
 
@@ -872,13 +899,13 @@ Java中的NIO对应`java.nio`包，提供了`Channel`，`Selector`，`Buffer`等
 
 Java中的NIO可以看作是**I/O多路复用模型**。也有很多人认为，Java中的NIO属于**同步非阻塞I/O模型**。
 
-![同步非阻塞](JavaSE.assets/微信截图_20220705105347.png)
+![同步非阻塞](Java.assets/微信截图_20220705105347.png)
 
 同步非阻塞I/O模型中，应用程序会一直发起`read`调用，等待数据从内核空间拷贝到用户空间的这段时间里，线程依然是阻塞的，直到在内核把数据拷贝到用户空间。相比于同步阻塞I/O模型，同步非阻塞I/O模型确实有了很大改进：**通过轮询操作，避免了一直阻塞**。
 
 但是，这种I/O模型同样存在问题：**应用程序不断进行系统调用的过程（轮询）是十分消耗CPU资源的**。这个时候，**I/O多路复用模型**就上场了。
 
-![I/O多路复用](JavaSE.assets/微信截图_20220705105713.png)
+![I/O多路复用](Java.assets/微信截图_20220705105713.png)
 
 I/O多路复用模型中，线程首先发起`select`调用，询问内核数据是否准备就绪，等内核把数据准备好了，用户线程再发起`read`调用，其过程还是阻塞的。
 
@@ -896,15 +923,15 @@ I/O多路复用模型中，线程首先发起`select`调用，询问内核数据
 |         fd数据拷贝         | 从用户空间拷贝到内核空间 | 从用户空间拷贝到内核空间 |      使用内存映射，不需要从用户空间频繁地拷贝到内核空间      |
 |         最大连接数         |        一般为1024        |          无限制          |                            无限制                            |
 
-##### AIO(Asynchronous I/O)
+##### AIO（Asynchronous I/O）
 
 AIO也就是NIO 2，属于异步I/O模型。异步I/O是**基于事件和回调机制**实现的，也就是应用操作之后会直接返回，不会堵塞在那里，当后台处理完成，操作系统会通知相应的线程进行后续的操作。
 
-![异步I/O](JavaSE.assets/微信截图_20220705110115.png)
+![异步I/O](Java.assets/微信截图_20220705110115.png)
 
 ##### 总结
 
-![总结](JavaSE.assets/33b193457c928ae02217480f994814b6.png)
+![总结](Java.assets/33b193457c928ae02217480f994814b6.png)
 
 ## 九、代理模式
 
@@ -1209,7 +1236,7 @@ aliSmsService.send("java");
 - **灵活性**：动态代理更加灵活，不需要必须实现接口，可以直接代理实现类（CGLIB动态代理），并且可以不需要针对每个目标类都创建一个代理类。另外，静态代理中，接口一旦新增加方法，目标对象和代理对象都要进行修改，这是非常麻烦的。
 - **JVM层面**：**静态代理在编译时**就将接口、实现类、代理类这些都变成了一个个实际的`.class`文件；而**动态代理是在运行时**动态生成类字节码，并加载到JVM中。
 
-## 十、Java集合
+## 十、集合
 
 ### 10.1 类关系图&概览
 
@@ -1217,13 +1244,13 @@ aliSmsService.send("java");
 
 Java集合，也叫作容器，主要包括`Collection`和`Map`两种，`Collection`存储着对象的集合，而`Map`存储着键值对（两个对象）的映射表。
 
-![类关系图](JavaSE.assets/java_collections_overview.png)
+![类关系图](Java.assets/java_collections_overview.png)
 
 **自己总结**：
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-01.html#java-%E9%9B%86%E5%90%88%E6%A6%82%E8%A7%88)
 
-![Java集合](JavaSE.assets/Java集合.png)
+![Java集合](Java.assets/Java集合.png)
 
 ### 10.2 `ArrayList`源码分析:rocket:
 
@@ -1246,7 +1273,7 @@ public class ArrayList<E> extends AbstractList<E>
 - `ArrayList`实现了`Cloneable`接口，即覆盖了函数`clone()`，能被克隆。
 - `ArrayList`实现了`java.io.Serializable`接口，这意味着`ArrayList`支持序列化，能通过序列化去传输。
 
-![ArrayList底层数组](JavaSE.assets/ArrayList_base.png)
+![ArrayList底层数组](Java.assets/ArrayList_base.png)
 
 `size()`，`isEmpty()`，`get()`，`set()`方法均能在常数时间内完成，`add()`方法的**时间开销跟插入位置有关**，`addAll()`方法的**时间开销跟添加元素的个数成正比**，其余方法大都是线性时间。
 
@@ -1258,7 +1285,7 @@ public class ArrayList<E> extends AbstractList<E>
 
 以无参数构造方法创建`ArrayList`时，实际上初始化赋值的是一个空数组。当真正对数组进行添加元素操作时，才会分配容量，即**向数组中添加第一个元素时，数组容量扩为10**。
 
-##### 逐步分析扩容
+##### 逐步分析扩容机制
 
 以无参构造函数创建的`ArrayList`为例分析。
 
@@ -1414,7 +1441,7 @@ public void ensureCapacity(int minCapacity) {
 
 ##### 总结（自己）:rocket:
 
-![ArrayList扩容机制](JavaSE.assets/ArrayList的扩容机制.png)
+![ArrayList扩容机制](Java.assets/ArrayList的扩容机制.png)
 
 ### 10.3 `HashMap`源码分析:rocket:
 
@@ -1430,13 +1457,13 @@ public void ensureCapacity(int minCapacity) {
 
 JDK 1.7`HashMap`底层是**数组和链表**结合在一起使用，也就是**链表散列**，数组是主体，链表主要是为了解决哈希冲突而存在的（**“拉链法”解决冲突：头插法**）。所谓**“拉链法”** 就是：将链表和数组相结合。也就是说创建一个链表数组，**数组中每一格就是一个链表**。若遇到哈希冲突，则将冲突的值加到链表中即可。
 
-![拉链法](JavaSE.assets/jdk1.8之前的内部结构.png)
+![拉链法](Java.assets/jdk1.8之前的内部结构.png)
 
 ##### JDK 1.8
 
 相比于之前的版本，JDK 1.8在解决哈希冲突时有了较大的变化（**“拉链法”：尾插法**）。当链表长度大于阈值（**默认为8**）时，会首先调用`treeifyBin()`方法。这个方法会根据`HashMap`数组来决定是否转换为红黑树。只有当**数组长度大于或者等于64**的情况下，才会执行转换红黑树操作，以减少搜索时间；否则就只执行`resize()`方法对数组扩容。
 
-![红黑树](JavaSE.assets/capture_20220708010014273.bmp)
+![红黑树](Java.assets/capture_20220708010014273.bmp)
 
 #### `hash()`方法
 
@@ -1506,7 +1533,7 @@ public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>, Cloneabl
 
 > 参考链接：[美团技术团队](https://tech.meituan.com/2016/06/24/java-hashmap.html)、[博客1](https://zhengw-tech.com/2019/06/01/java-rehash/)、[博客2](https://sanjiren123.ltd/articles/2022/03/25/1648173402161.html)
 
-![put()方法](JavaSE.assets/HashMap的put()方法.png)
+![put()方法](Java.assets/HashMap的put()方法.png)
 
 ```java
 public V put(K key, V value) {
@@ -1584,19 +1611,17 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 }
 ```
 
-### 10.4 ConcurrentHashMap源码分析:airplane:
+### 10.4 `ConcurrentHashMap`源码分析:airplane:
 
 > 参考链接：[JavaGudie](https://javaguide.cn/java/collection/concurrent-hash-map-source-code.html)
 
-#### JDK 1.7
+#### `ConcurrentHashMap` 1.7
 
 ##### 存储结构
 
-`ConcurrentHashMap`的存储结构下，`ConcurrnetHashMap` 由很多个`Segment`组合，而每一个`Segment` 是一个类似于`HashMap`的结构，但是`Segment`的个数一旦**初始化就不能改变**，默认`Segment`的个数是16个，**也可以认为`ConcurrentHashMap`默认最多支持16个线程并发**。
+`ConcurrnetHashMap` 由很多个`Segment`组合，而每一个`Segment`是一个类似于`HashMap`的结构，但是`Segment`的个数一旦**初始化就不能改变**，默认`Segment`的个数是16个，**也可以认为`ConcurrentHashMap`默认最多支持16个线程并发**。
 
-![JDK 1.7存储结构](JavaSE.assets/java7_concurrenthashmap.49a48864.png)
-
-
+![JDK 1.7存储结构](Java.assets/java7_concurrenthashmap.png)
 
 ##### 初始化
 
@@ -1607,23 +1632,23 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 5. 记录`segmentMask`，默认是$ssize-1=16-1=15$；
 6. 初始化`segments[0]`，**默认大小为2，负载因子为0.75，扩容阀值是$2*0.75=1.5$**，插入第2个值时才会进行扩容。
 
-#### JDK 1.8
+#### `ConcurrentHashMap` 1.8
 
 ##### 存储结构
 
-![JDK 1.8存储结构](JavaSE.assets/java8_concurrenthashmap.c9951bb5.png)
+![JDK 1.8存储结构](Java.assets/java8_concurrenthashmap.png)
 
-JDK 1.8的`ConcurrentHashMap`相对于JDK 1.7来说变化比较大，不再是之前的**`Segment`数组+`HashEntry`数组+链表**，而是**`Node`数组+链表/红黑树**。当冲突链表达到一定长度时，链表会转换成红黑树。
+可以发现JDK 1.8的`ConcurrentHashMap`相对于JDK 1.7来说变化比较大，不再是之前的**`Segment`数组+`HashEntry`数组+链表**，而是**`Node`数组+链表/红黑树**。当冲突链表达到一定长度时，链表会转换成红黑树。
 
 ##### 初始化
 
-JDK 1.8种`ConcurrentHashMap`的初始化是通过**自旋和CAS**操作完成的，里面需要注意的是变量`sizeCtl`，它的值决定着当前的初始化状态。
+JDK 1.8中`ConcurrentHashMap`的初始化是通过**自旋和CAS**操作完成的，里面需要注意的是变量`sizeCtl`，它的值决定着当前的初始化状态。
 
 #### 总结
 
-JDK 1.7中`ConcurrentHashMap`使用的分段锁，也就是每一个`Segment`上同时只有一个线程可以操作，每一个`Segment`都是一个类似`HashMap`数组的结构，它可以扩容，它的冲突会转化为链表，但是`Segment`的个数一但初始化就不能改变。
+JDK 1.7中`ConcurrentHashMap`使用的是分段锁，也就是每一个`Segment`上同时只有一个线程可以操作，每一个`Segment`都是一个类似`HashMap`数组的结构，它可以扩容，它的冲突会转化为链表，但是`Segment`的个数一但初始化就不能改变。
 
-JDK 1.8中的`ConcurrentHashMap`使用的`synchronized`锁加CAS的机制。结构转化为了**`Node`数组+链表/红黑树**，`Node`是类似于一个`HashEntry 的结构。它的冲突再达到一定大小时会转化成红黑树，在冲突小于一定数量时又退回链表。
+JDK 1.8中`ConcurrentHashMap`使用的是`synchronized`锁加CAS的机制。结构转化为了**`Node`数组+链表/红黑树**，`Node`是类似于一个`HashEntry`的结构。它的冲突再达到一定大小时会转化成红黑树，在冲突小于一定数量时又退回链表。
 
 ### 10.5 常见问题:rocket:
 
@@ -1634,7 +1659,7 @@ JDK 1.8中的`ConcurrentHashMap`使用的`synchronized`锁加CAS的机制。结�
 - `List`：有序、可重复。
 - `Set`：无序、不可重复。
 - `Queue`：有序、可重复。
-- `Map`：Key是无序、不可重复，Value是无序、可重复。
+- `Map`：`Key`是无序、不可重复，`Value`是无序、可重复。
 
 #### 无序性和不可重复性的含义
 
@@ -1717,37 +1742,49 @@ JDK 1.8中的`ConcurrentHashMap`使用的`synchronized`锁加CAS的机制。结�
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-02.html#concurrenthashmap-%E5%92%8C-hashtable-%E7%9A%84%E5%8C%BA%E5%88%AB)
 
-`ConcurrentHashMap`和`HashTable`的区别主要体现在实现线程安全的方式上不同：
-
 - **底层数据结构**：JDK 1.7的`ConcurrentHashMap`底层采用**分段的数组+链表**实现，JDK 1.8采用的数据结构跟`HashMap 1.8`的结构一样：数组+链表/红黑树；`Hashtable`和JDK 1.8之前的`HashMap`的底层数据结构类似都是采用**数组+链表**的形式，数组是`HashMap`的主体，链表则是主要为了解决哈希冲突而存在的。
+- **实现线程安全的方式**：
+  - **在JDK 1.7中**，`ConcurrentHashMap`对整个桶数组进行了分割分段（`Segment`），每一把锁只锁容器中一部分数据，多线程访问容器里不同数据段的数据，就不会存在锁竞争，提高并发访问率。
+  - **在JDK 1.8中**，`ConcurrentHashMap`已经摒弃了`Segment`的概念，而是直接用`Node`数组+链表+红黑树的数据结构来实现，并发控制使用`synchronized`和CAS来操作。整个看起来就像是优化过且线程安全的`HashMap`，虽然在JDK 1.8中还能看到`Segment`的数据结构，但是已经简化了属性，只是为了兼容旧版本；
+  - `Hashtable`：使用`synchronized`来保证线程安全，效率非常低下。**当一个线程访问同步方法时，其他线程也访问同步方法，可能会进入阻塞或轮询状态**，如使用`put`添加元素，另一个线程不能使用`put`添加元素，也不能使用`get`，竞争会越来越激烈、效率越来越低。
 
-- **实现线程安全的方式**：①**在JDK 1.7中**，`ConcurrentHashMap`（分段锁）对整个桶数组进行了分割分段（`Segment`），每一把锁只锁容器其中一部分数据，多线程访问容器里不同数据段的数据，就不会存在锁竞争，提高并发访问率。**到了JDK 1.8的时候已经摒弃了`Segment`的概念，而是直接用`Node`数组+链表+红黑树的数据结构来实现，并发控制使用`synchronized`和CAS来操作。整个看起来就像是优化过且线程安全的`HashMap`，虽然在JDK 1.8中还能看到`Segment`的数据结构，但是已经简化了属性，只是为了兼容旧版本；**②**`Hashtable`（同一把锁）**使用`synchronized`来保证线程安全，效率非常低下。当一个线程访问同步方法时，其他线程也访问同步方法，可能会进入阻塞或轮询状态。
+再来看看二者底层数据结构：
 
 `HashTable`：
 
-![HashTable](JavaSE.assets/HashTable全表锁.png)
+![HashTable](Java.assets/hashtable.png)
 
 JDK 1.7的`ConcurrentHashMap`：
 
-![JDK 1.7CHashMap](JavaSE.assets/java7_concurrenthashmap.49a48864.png)
+![JDK 1.7CHashMap](Java.assets/java7_concurrenthashmap.png)
+
+`ConcurrentHashMap`是由`Segment`数组和`HashEntry`数组组成。`Segment`数组中的每个元素包含一个`HashEntry`数组，每个`HashEntry`元素属于链表结构。
 
 JDK 1.8的`ConcurrentHashMap`：
 
-![JDK 1.8CHashMap](JavaSE.assets/java8_concurrenthashmap.c9951bb5.png)
+![JDK 1.8CHashMap](Java.assets/java8_concurrenthashmap.png)
 
-#### `ConcurrentHashMap`的线程安全的具体实现方式/底层具体实现
+JDK 1.8的`ConcurrentHashMap`不再是**`Segment`数组+`HashEntry`数组+链表**，而是**`Node`数组+链表/红黑树**。`Node`只能用于链表的情况，红黑树的情况需要使用`TreeNode`。
+
+`TreeNode`存储红黑树节点，被`TreeBin`包装。`TreeBin`通过`root`属性维护红黑树的根结点，因为红黑树在旋转的时候，根结点可能会被它原来的子节点替换掉，在这个时间点，如果有其他线程要写这棵红黑树就会发生线程不安全问题，**所以在`ConcurrentHashMap`中`TreeBin`通过`waiter`属性维护当前使用这棵红黑树的线程，来防止其他线程的进入**。
+
+#### `ConcurrentHashMap`线程安全的具体实现方式/底层具体实现
 
 > 参考链接：[JavaGuide](https://javaguide.cn/java/collection/java-collection-questions-02.html#concurrenthashmap-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F-%E5%BA%95%E5%B1%82%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0)
 
-##### JDK 1.7
+##### JDK 1.8之前
 
-首先将数据分为一段一段的存储形式，然后给每一段数据配一把锁，当一个线程占用锁访问其中一个段数据时，其他段的数据也能被其他线程访问。**`ConcurrentHashMap`是由`Segment[]`结构和`HashEntry[]`结构组成**。`Segment`继承了`ReentrantLock`，所以`Segment`是一种可重入锁，`HashEntry`用于存储键值对数据。
+首先将数据分为一段一段（这个段就是`Segment`元素）的存储形式，然后给每一段数据配一把锁，当一个线程占用锁访问其中一个段数据时，其他段的数据也能被其他线程访问。**`ConcurrentHashMap`是由`Segment`数组和`HashEntry`数组组成**。`Segment`继承了`ReentrantLock`，所以`Segment`是一种可重入锁，`HashEntry`用于存储键值对数据。
 
-一个`ConcurrentHashMap`里包含一个`Segment`数组，一个`Segment`包含一个`HashEntry`数组，其中每个`HashEntry`是一个链表结构的元素，每个`Segment`守护着一个`HashEntry`数组里的元素，当对`HashEntry`数组的数据进行修改时，必须首先获得对应的`Segment`的锁。
+一个`ConcurrentHashMap`里包含一个`Segment`数组，**`Segment`数组的个数一旦初始化就不能改变，默认为16，即默认同时支持16个线程并发**。
 
-##### JDK 1.8
+`Segment`元素结构和`HashMap`类似，是一种数组和链表结构，一个`Segment`元素包含一个`HashEntry`数组，每个`HashEntry`是一个链表结构的元素，每个`Segment`元素守护着一个`HashEntry`元素。当对`HashEntry`进行修改时，必须首先获得对应的`Segment`元素的锁。也就是说，**对同一`Segment`的并发写入会被阻塞，不同`Segment`的写入是可以并发执行的**。
 
-`ConcurrentHashMap`取消了`Segment`分段锁，采用CAS和`synchronized`来保证并发安全。在链表长度超过一定阈值（8）时将链表转换为红黑树。`synchronized`只锁定当前链表或红黑二叉树的首节点，这样只要不产生哈希冲突，就不会产生并发，效率提升。
+##### JDK 1.8之后
+
+几乎重写了`ConcurrentHashMap`。`ConcurrentHashMap`取消了`Segment`分段锁，**采用`Node`+CAS+`synchronized`来保证并发安全**，其数据结构和`HashMap`类似，即数组+链表/红黑树。
+
+JDK 1.8中锁粒度更细，`synchronized`只锁定当前链表或红黑树的头（根）节点，这样只要不发生哈希冲突，就不会产生并发，也就不会影响其他节点的读写，效率大幅提升（**最大并发度取决于`Node`数组的大小**）。
 
 ## 十一、常见问题:airplane:
 
@@ -1801,20 +1838,4 @@ b += a;
   - 当使用`java.lang.reflect.Constructor`类里的`newInstance()`方法，调用的是有参构造方法。
 - 使用`Object`类的`clone()`方法，需要实现`Cloneable`接口，**这种方式创建对象并不会调用任何构造函数**。
 - 使用反序列化，通过`ObjectInputStream`的`readObject()`方法反序列化类。**在反序列化时，创建对象并不会调用任何构造函数**。
-
-### 11.6 如何处理Java异常？
-
-> 参考：/Reference/java面经/基础篇/44
-
-使用`try-catch-finally`代码块：
-
-- `try`块：负责监控可能出现异常的代码。
-- `catch`块：负责捕获可能出现的异常，并进行处理。
-- `finally`块：负责清理各种资源，不管是否出现异常都会执行。
-
-其中`try`块是必须的，`catch`和`finally`至少存在一个标准异常处理流程。
-
-![try-catch-finally](JavaSE.assets/try-catch-finally.jpg)
-
-在开发过程中有时会使用到自定义异常，在选择抛出异常的时候，应该选择合适的异常类，从而可以明确地描述该异常情况。自定义异常通常是通过继承`java.lang.Exception`类，如果想自定义`Runtime`异常的话，可以继承`java.lang.RuntimeException`类，实现一个无参构造和一个带字符串参数的有参构造方法。在业务代码里，可以针对性的使用自定义异常。比如说：该用户不具备某某权限、余额不足等。
 
