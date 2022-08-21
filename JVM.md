@@ -1002,9 +1002,8 @@ G1（Garbage-First），它是一款面向服务端应用的垃圾收集器，�
 
 ### 6.4 什么是OopMap和安全点？
 
-> 参考：/Reference/java面经/JVM篇/23
+> 参考：/Reference/java面经/JVM篇/23、[知乎](https://zhuanlan.zhihu.com/p/441867302)
 >
-> [知乎](https://zhuanlan.zhihu.com/p/441867302)
 
 GC Roots枚举的过程中是需要暂停用户线程的，对栈进行扫描，找到哪些地方存储了对象的引用。然而，栈存储的数据不止是对象的引用，因此对整个栈进行全量扫描，显然是很耗费时间，影响性能的。
 
