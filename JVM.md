@@ -520,33 +520,112 @@ u2             constant_pool_count;//常量池的数量
 cp_info        constant_pool[constant_pool_count-1];//常量池
 ```
 
-紧接着主次版本号之后的是常量池，常量池的数量是 `constant_pool_count-1`（**常量池计数器是从 1 开始计数的，将第 0 项常量空出来是有特殊考虑的，索引值为 0 代表“不引用任何一个常量池项”**）。
+紧接着主次版本号之后的是常量池，常量池的数量是`constant_pool_count-1`（**常量池计数器是从1开始计数的，将第0项常量空出来是有特殊考虑的，索引值为0代表“不引用任何一个常量池项”**）。
 
-常量池主要存放两大常量：字面量和符号引用。字面量比较接近于 Java 语言层面的的常量概念，如文本字符串、声明为 final 的常量值等。而符号引用则属于编译原理方面的概念。包括下面三类常量：
+常量池主要存放两大常量：**字面量**和**符号引用**。字面量比较接近于Java语言层面的的常量概念，如**文本字符串**、**声明为`final`的常量值**等；而符号引用则属于编译原理方面的概念，包括下面3类常量：
 
-- 类和接口的全限定名
-- 字段的名称和描述符
-- 方法的名称和描述符
+- 类和接口的全限定名。
+- 字段的名称和描述符。
+- 方法的名称和描述符。
 
-常量池中每一项常量都是一个表，这 14 种表有一个共同的特点：**开始的第一位是一个 u1 类型的标志位 -tag 来标识常量的类型，代表当前这个常量属于哪种常量类型．**
+常量池中每一项常量都是一个表，这14种表有一个共同的特点：**开始第一位是一个u1类型的标志位，即`tag`，用来表示当前这个常量属于哪种常量类型**。
 
+|               类型               | 标志（`tag`） |          描述          |
+| :------------------------------: | :-----------: | :--------------------: |
+|        CONSTANT_utf8_info        |       1       |   UTF-8编码的字符串    |
+|      CONSTANT_Integer_info       |       3       |       整形字面量       |
+|       CONSTANT_Float_info        |       4       |      浮点型字面量      |
+|        CONSTANT_Long_info        |      ５       |      长整型字面量      |
+|       CONSTANT_Double_info       |      ６       |   双精度浮点型字面量   |
+|       CONSTANT_Class_info        |      ７       |   类或接口的符号引用   |
+|       CONSTANT_String_info       |      ８       |    字符串类型字面量    |
+|      CONSTANT_Fieldref_info      |      ９       |     字段的符号引用     |
+|     CONSTANT_Methodref_info      |      10       |   类中方法的符号引用   |
+| CONSTANT_InterfaceMethodref_info |      11       |  接口中方法的符号引用  |
+|    CONSTANT_NameAndType_info     |      12       |  字段或方法的符号引用  |
+|     CONSTANT_MothodType_info     |      16       |      标志方法类型      |
+|    CONSTANT_MethodHandle_info    |      15       |      表示方法句柄      |
+|   CONSTANT_InvokeDynamic_info    |      18       | 表示一个动态方法调用点 |
 
+`.class`文件可以通过`javap -v class类名`指令来查看其常量池中的信息（`javap -v class类名-> temp.txt`：将结果输出到`temp.txt`文件）。
 
+#### 访问标志（Access Flags）
 
+在常量池结束之后，紧接着的两个字节代表**访问标志**，这个标志用于识别一些类或者接口层次的访问信息，包括：这个`.class`是类还是接口、是否为`public`或`abstract`类型、如果是类的话是否声明为`final`等。
 
+类访问和属性修饰符：
 
+![访问标志](JVM.assets/访问标志.png)
 
+#### 当前类（This Class）、父类（Super Class）、接口（Interfaces）索引集合
 
+```c
+u2             this_class;//当前类
+u2             super_class;//父类
+u2             interfaces_count;//接口
+u2             interfaces[interfaces_count];//一个类可以实现多个接口
+```
 
+**类索引用于确定这个类的全限定名，父类索引用于确定这个类的父类的全限定名**。由于Java语言单继承，所以父类索引只有一个，除了`java.lang.Object`之外，所有的类都有父类，因此除了`java.lang.Object`外，所有类的父类索引都不为0。
 
+**接口索引集合用来描述这个类实现了那些接口**，这些被实现的接口将按 `implements`（如果这个类本身是接口的话则是`extends`）后的接口顺序从左到右排列在接口索引集合中。
 
+#### 字段表集合（Fields）
 
+```c
+u2             fields_count;//Class 文件的字段的个数
+field_info     fields[fields_count];//一个类会可以有个字段
+```
 
-## 二、类加载机制:rocket:
+**字段表（`field info`）用于描述接口或类中声明的变量**。字段包括类级变量以及实例变量，但不包括在方法内部声明的局部变量。字段表的结构：
 
-> 参考链接：[Java全栈知识体系](https://pdai.tech/md/java/jvm/java-jvm-classload.html)
+![字段表](JVM.assets/字段表的结构.png)
 
-### 2.1 类的生命周期
+- `access_flags`：字段的作用域（`public`、`private`、`protected`修饰符）、是实例变量还是类变量（`static`修饰符）、可否被序列化（`transient`修饰符）、可变性（`final`）、可见性（`volatile`修饰符）。
+
+  `access_flags`取值：
+
+  ![access_flags取值](JVM.assets/image-20201031084342859.png)
+
+- `name_index`：对常量池的引用，表示字段的名称。
+
+- `descriptor_index`：对常量池的引用，表示字段和方法的描述符。
+
+- `attributes_count`：一个字段还会拥有一些额外的属性，`attributes_count`存放属性的个数。
+
+- `attributes[attributes_count]`：存放具体属性的具体内容。
+
+上述这些信息中，各个修饰符都是布尔值，要么有某个修饰符，要么没有，很适合使用标志位来表示；而字段叫什么名字、字段被定义为什么数据类型这些都是无法固定的，只能引用常量池中常量来描述。
+
+#### 方法表集合（Methods）
+
+```c
+u2             methods_count;//Class 文件的方法的数量
+method_info    methods[methods_count];//一个类可以有个多个方法
+```
+
+`methods_count`表示方法的数量，而`method_info`表示方法表。
+
+**`.class`文件存储格式中对方法的描述与对字段的描述几乎采用了完全一致的方式**。方法表的结构如同字段表一样，依次包括了访问标志、名称索引、描述符索引、属性表集合等。方法表的结构：
+
+![方法表](JVM.assets/方法表的结构.png)
+
+`access_flags`取值：
+
+![access_flags取值](JVM.assets/image-20201031084248965.png)
+
+#### 属性表集合（Attributes）
+
+```c
+u2             attributes_count;//此类的属性表中的属性数
+attribute_info attributes[attributes_count];//属性表集合c
+```
+
+在`.class`文件中，字段表、方法表都可以携带自己的属性表集合，用于描述某些场景专有的信息。与`.class`文件中其它的数据项目要求的顺序、长度和内容不同，属性表集合的限制稍微宽松一些，不再要求各个属性表具有严格的顺序，并且只要不与已有的属性名重复，任何人实现的编译器都可以向属性表中写 入自己定义的属性信息，JVM运行时会忽略掉它不认识的属性。
+
+## 四、类加载过程
+
+### 4.1 类的生命周期
 
 其中类加载的过程包括了**加载**、**验证**、**准备**、**解析**、**初始化**五个阶段。在这五个阶段中，**加载**、**验证**、**准备**和**初始化**这四个阶段发生的顺序是**确定**的，而**解析**阶段则不一定，**它在某些情况下可以在初始化阶段之后开始，这是为了支持Java语言的运行时绑定（也成为动态绑定或晚期绑定）**。另外注意这里的几个阶段是**按顺序开始**，**而不是按顺序进行或完成**，因为这些阶段通常都是互相交叉地混合进行的，**通常在一个阶段执行的过程中调用或激活另一个阶段**。
 
