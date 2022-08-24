@@ -51,7 +51,9 @@ JVM规范对于运行时数据区域的规定是相当宽松的。**以堆为例
 
 - **动态链接**主要服务于一个方法需要调用其他方法的场景。在Java源文件被编译成字节码文件时，所有的变量和方法引用都作为符号引用保存在`.class`文件的常量池里。当一个方法要调用其他方法，需要将常量池中指向方法的符号引用转化为其在内存地址中的直接引用。动态链接的作用就是**为了将符号引用转换为调用方法的直接引用**。
 
-  ![动态链接](JVM.assets/jvmimage-20220331175738692.png)栈空间虽然不是无限的，但一般正常调用的情况下是不会出现问题的。不过，如果函数调用陷入无限循环的话，就会导致栈中被压入太多栈帧而占用太多空间，导致栈空间过深。**那么当线程请求栈的深度超过当前Java虚拟机栈的最大深度的时候，就抛出`StackOverFlowError`错误**。
+  ![动态链接](JVM.assets/jvmimage-20220331175738692.png)
+
+  栈空间虽然不是无限的，但一般正常调用的情况下是不会出现问题的。不过，如果函数调用陷入无限循环的话，就会导致栈中被压入太多栈帧而占用太多空间，导致栈空间过深。**那么当线程请求栈的深度超过当前Java虚拟机栈的最大深度的时候，就抛出`StackOverFlowError`错误**。
 
 - Java方法有两种返回方式，一种是`return`语句正常返回，一种是抛出异常。不管哪种返回方式，都会导致栈帧被弹出。也就是说，**栈帧随着方法调用而创建，随着方法结束而销毁。无论方法正常完成还是异常完成都算作方法结束**。
 
@@ -163,10 +165,10 @@ JDK 1.4中新加入的**NIO（New Input/Output）类**，引入了一种基于**
      - 使用该分配方式的GC收集器：Serial、ParNew。
    - **空闲列表**：
      - 适用场合：堆内存不规整的情况下。
-     - 原理：虚拟机会维护一个列表，该列表中会记录哪些内存块是可用的，在分配的时候，找一块儿足够大的内存块儿来划分给对象实例，最后更新列表记录。
+     - 原理：虚拟机会维护一个列表，该列表中会记录哪些内存块是可用的，在分配的时候，找一块足够大的内存块来划分给对象实例，最后更新列表记录。
      - 使用该分配方式的GC收集器：CMS
 
-   选择以上两种方式中的哪一种，**取决于Java堆内存是否规整，而Java堆内存是否规整取决于GC收集器的算法是“标记—整理”，还是“标记—清除”，值得注意的是，”标记—复制“算法内存也是规整的**。
+   选择以上两种方式中的哪一种，**取决于Java堆内存是否规整，而Java堆内存是否规整取决于GC收集器的算法是“标记—整理”，还是“标记—清除”，值得注意的是，“标记—复制”算法内存也是规整的**。
 
    **内存分配并发问题**：在创建对象的时候有一个很重要的问题，就是线程安全，因为在实际开发过程中，创建对象是很频繁的事情，作为虚拟机来说，必须要保证线程是安全的，通常来讲，虚拟机采用两种方式来保证线程安全：
 
@@ -551,6 +553,10 @@ cp_info        constant_pool[constant_pool_count-1];//常量池
 
 #### 访问标志（Access Flags）
 
+```c
+u2             access_flags;//Class 的访问标记
+```
+
 在常量池结束之后，紧接着的两个字节代表**访问标志**，这个标志用于识别一些类或者接口层次的访问信息，包括：这个`.class`是类还是接口、是否为`public`或`abstract`类型、如果是类的话是否声明为`final`等。
 
 类访问和属性修饰符：
@@ -674,7 +680,7 @@ attribute_info attributes[attributes_count];//属性表集合c
 
 > 参考链接：[Java全栈知识体系](https://pdai.tech/md/java/jvm/java-jvm-classload.html#%e5%87%86%e5%a4%87-%e4%b8%ba%e7%b1%bb%e7%9a%84%e9%9d%99%e6%80%81%e5%8f%98%e9%87%8f%e5%88%86%e9%85%8d%e5%86%85%e5%ad%98%e5%b9%b6%e5%b0%86%e5%85%b6%e5%88%9d%e5%a7%8b%e5%8c%96%e4%b8%ba%e9%bb%98%e8%ae%a4%e5%80%bc)
 
-准备阶段是**正式为类变量分配内存并设置类变量初始值的阶段**，**这些内存都将在方法区中分配**。对于该阶段有以下几点需要注意：
+准备阶段是**正式为类变量分配内存并设置类变量初始值的阶段**，对于该阶段有以下几点需要注意：
 
 - 这时候进行内存分配的仅包括类变量（`static`）而**不包括实例变量**，**实例变量会在对象实例化时随着对象一块分配在Java堆中**。
 
@@ -725,32 +731,37 @@ attribute_info attributes[attributes_count];//属性表集合c
 
 在JVM生命周期内，**由JVM自带的类加载器加载的类是不会被卸载的，但由自定义类加载器加载的类是可能被卸载的**。
 
-### 2.2 类加载器，JVM类加载机制
+### 4.3 类加载器:airplane:
 
-#### 类加载器的层次
+> 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/classloader.html)
 
-![类加载器的层次](JVM.assets/java_jvm_classload_3.png)
+#### 3个重要的类加载器
 
-注意：这里父类加载器并不是通过继承关系来实现的，而是采用组合实现的。
+JVM中内置了三个重要的类加载器，除了BootstrapClassLoader，其他类加载器均由Java实现且全部继承自`java.lang.ClassLoader`：
 
-站在Java虚拟机的角度来讲，只存在两种不同的类加载器：
+- **BootstrapClassLoader（启动类加载器）**：最顶层的加载类，由C++实现，负责加载`%JAVA_HOME%/lib`目录下的jar包和类、或被`-Xbootclasspath`参数指定的路径中的所有类。
+- **ExtensionClassLoader（扩展类加载器）**：主要负责加载`%JRE_HOME%/lib/ext`目录下的jar包和类、或被`java.ext.dirs`系统变量所指定的路径下的jar包。
+- **AppClassLoader（应用程序类加载器）**：面向用户的加载器，负责加载当前应用classpath下的所有jar包和类。
 
-- 启动类加载器：它使用C++实现（这里仅限于`Hotspot`，也就是JDK1.5之后默认的虚拟机，有很多其他的虚拟机是用Java语言实现的），**是虚拟机自身的一部分**。
-- 所有其他的类加载器：这些类加载器都由Java语言实现，**独立于虚拟机之外**，并且全部继承自抽象类`java.lang.ClassLoader`，这些类加载器**需要由启动类加载器加载到内存中之后才能去加载其他的类**。
+#### 双亲委派模型
 
-站在Java开发人员的角度来看，类加载器可以大致划分为以下三类：
+##### 简介
 
-- 启动类加载器：Bootstrap ClassLoader，负责加载存放在`JDK\jre\lib`（JDK代表JDK的安装目录，下同）下，或被`-Xbootclasspath`参数指定的路径中的，并且能被虚拟机识别的类库（如rt.jar，所有的`java.*`开头的类均被Bootstrap ClassLoader加载）。启动类加载器是无法被Java程序直接引用的。
-- 扩展类加载器：Extension ClassLoader，该加载器由`sun.misc.Launcher$ExtClassLoader`实现，它负责加载`JDK\jre\lib\ext`目录中，或者由java.ext.dirs系统变量指定的路径中的所有类库（如`javax.*`开头的类），**开发者可以直接使用扩展类加载器**。
-- 应用程序类加载器：Application ClassLoader，该类加载器由`sun.misc.Launcher$AppClassLoader`来实现，**它负责加载用户类路径（ClassPath）所指定的类，开发者可以直接使用该类加载器**，如果应用程序中没有自定义过自己的类加载器，一般情况下这个就是程序中**默认的类加载器**。
+**每一个类都有一个对应的类加载器**。系统中的ClassLoader在协同工作的时候会默认使用**双亲委派模型**，即**在类加载的时候，系统会首先判断当前类是否被加载过，已经被加载的类会直接返回，否则才会尝试加载**。加载的时候，首先会把该请求委派给父类加载器的`loadClass()`处理，因此所有的请求最终都应该传送到顶层的启动类加载器`BootstrapClassLoader`中。当父类加载器无法处理时，才由自己来处理。当父类加载器为`null`时，会使用启动类加载器`BootstrapClassLoader`作为父类加载器。
 
-应用程序都是由这三种类加载器互相配合进行加载的，如果有必要，还可以加入自定义的类加载器。因为JVM自带的ClassLoader只是懂得从本地文件系统加载标准的`.class`文件，因此如果编写了自己的ClassLoader，便可以做到如下几点：
+![双亲委派机制](JVM.assets/classloader_WPS图片.png)
 
-- 在执行非置信代码之前，自动验证数字签名。
-- 动态地创建符合用户特定需要的定制化构建类。
-- 从特定的场所取得`.class`文件，例如数据库中和网络中。
+##### 优势
 
-#### 类的加载
+**双亲委派模型保证了Java程序的稳定运行，可以避免类的重复加载**（JVM区分不同类的方式不仅仅根据类名，**相同的类文件被不同的类加载器加载产生的是两个不同的类**），也保证了Java的核心API不被篡改。
+
+##### 打破双亲委派
+
+自定义加载器的话，需要继承`ClassLoader`。如果不想打破双亲委派模型，就重写`ClassLoader`类中的`findClass()`方法，无法被父类加载器加载的类最终会通过这个方法被加载；**如果想打破双亲委派机制则需要重写`loadClass()`方法**。
+
+### 补充：类加载方式
+
+> 参考链接：[Java全栈知识体系](https://pdai.tech/md/java/jvm/java-jvm-classload.html#%E7%B1%BB%E7%9A%84%E5%8A%A0%E8%BD%BD)
 
 类加载有三种方式：
 
@@ -780,7 +791,7 @@ public class Test2 {
 }
 ```
 
-##### `Class.forName()`和`ClassLoader.loadClass()`区别
+#### `Class.forName()`和`ClassLoader.loadClass()`区别
 
 > 参考链接：[掘金](https://juejin.cn/post/6844904023540105229)、[Github](https://github.com/nnngu/LearningNotes/blob/master/Java%20Basis/015%20%E5%8F%8D%E5%B0%84%E4%B8%AD%E7%9A%84%20Class.forName()%20%E4%B8%8E%20ClassLoader.loadClass()%20%E7%9A%84%E5%8C%BA%E5%88%AB.md)
 
@@ -788,66 +799,71 @@ public class Test2 {
 
 `ClassLoader.loadClass(className)`方法，其实调用了`ClassLoader.loadClass(name, false)`，**第二个参数表示不执行连接，只加载`.class`文件**。
 
-### 2.3 JVM类加载机制
+## 五、JVM重要参数
 
-- 全盘负责：当一个类加载器负责加载某个Class时，**该Class所依赖的和引用的其他Class也将由该类加载器负责载入**，除非显式使用另外一个类加载器来载入。
-- 父类委托：先让**父类加载器试图加载该类**，只有在父类加载器无法加载该类时才尝试从自己的类路径中加载该类。
-- 缓存机制：**缓存机制将会保证所有加载过的Class都会被缓存**，当程序中需要使用某个Class时，**类加载器先从缓存区寻找该Class，只有缓存区不存在，系统才会读取该类对应的二进制数据**，并将其转换成Class对象，存入缓存区。这就是为什么修改了Class后，必须重启JVM，程序的修改才会生效。
-- 双亲委派机制：如果一个类加载器收到了类加载的请求，它首先不会自己去尝试加载这个类，而是把**请求委托给父加载器去完成**，依次向上，因此所有的类加载请求最终都应该被**传递到顶层的启动类加载器中**，只有当父加载器在它的搜索范围中没有找到所需的类时，即无法完成该加载，子加载器才会尝试自己去加载该类。
+### 5.1 最大堆内存和最小堆内存
 
-#### 双亲委派机制过程
+> 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/jvm-intro.html#_4-1-%E8%B0%83%E6%95%B4%E6%9C%80%E5%A4%A7%E5%A0%86%E5%86%85%E5%AD%98%E5%92%8C%E6%9C%80%E5%B0%8F%E5%A0%86%E5%86%85%E5%AD%98)
 
-1. 当`AppClassLoader`加载一个class时，它首先不会自己去尝试加载这个类，而是把类加载请求委派给父类加载器`ExtClassLoader`去完成。
-2. 当`ExtClassLoader`加载一个class时，它首先也不会自己去尝试加载这个类，而是把类加载请求委派给`BootStrapClassLoader`去完成。
-3. 如果`BootStrapClassLoader`加载失败（例如在`$JAVA_HOME/jre/lib`里未查找到该class)，会使用`ExtClassLoader`来尝试加载。
-4. 若`ExtClassLoader`也加载失败，则会使用`AppClassLoader`来加载，如果`AppClassLoader`也加载失败，则会报出异常`ClassNotFoundException`。
-
-> 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/classloader.html#%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B%E4%BB%8B%E7%BB%8D)
-
-![双亲委派机制](JVM.assets/classloader_WPS图片.png)
-
-#### 双亲委派机制优势
-
-- 防止内存中出现多份同样的字节码，**避免类的重复加载**。
-- 保证程序安全稳定运行。
-
-#### 打破双亲委派机制
-
-> 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/classloader.html#%E5%A6%82%E6%9E%9C%E6%88%91%E4%BB%AC%E4%B8%8D%E6%83%B3%E7%94%A8%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B%E6%80%8E%E4%B9%88%E5%8A%9E)
-
-自定义加载器的话，需要继承`ClassLoader`。如果不想打破双亲委派模型，就重写`ClassLoader`类中的`findClass()`方法即可，无法被父类加载器加载的类最终会通过这个方法被加载；如果想打破双亲委派机制则需要重写`loadClass()`方法。
-
-
-
-## 五、关于JVM参数调优:airplane:
-
-> 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/jvm-intro.html#%E5%9B%9B%E3%80%81%E5%85%B3%E4%BA%8Ejvm%E8%B0%83%E4%BC%98%E7%9A%84%E4%B8%80%E4%BA%9B%E6%96%B9%E9%9D%A2)
-
-### 5.1 调整最大堆内存和最小堆内存
-
-`-Xmx`、`–Xms`：指定Java堆最大值（默认值是物理内存的1/4（<1GB））和初始Java堆最小值（默认值是物理内存的1/64（<1GB）)。
+`-Xmx`、`–Xms`：指定堆最大值（默认值是物理内存的1/4（<1GB））和初始堆最小值（默认值是物理内存的1/64（<1GB））。
 
 默认（`MinHeapFreeRatio`参数可以调整）空余堆内存小于40%时，JVM就会增大堆直到`-Xmx`的最大限制；默认（`MaxHeapFreeRatio`参数可以调整）空余堆内存大于70%时，JVM会减少堆直到`-Xms`的最小限制。简单来说，不停往堆内存里面放入数据，**等它剩余大小小于40%了，JVM就会动态申请内存空间直到`-Xmx`的限制，如果剩余大小大于70%，又会动态缩小直到`–Xms`的限制**。
 
 开发过程中，通常会将`-Xms`与`-Xmx`两个参数配置成**相同的值**，其目的是**能够在Java垃圾回收机制清理完堆区后不需要重新分隔计算堆区的大小而浪费资源**。
 
-### 5.2 调整老年代和新生代的比值
+### 5.2 老年代和新生代的比例
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/jvm-intro.html#_4-2-%E8%B0%83%E6%95%B4%E6%96%B0%E7%94%9F%E4%BB%A3%E5%92%8C%E8%80%81%E5%B9%B4%E4%BB%A3%E7%9A%84%E6%AF%94%E5%80%BC)
 
 `-XX:NewRatio`：老年代和新生代（Eden+2*Survivor）的比值。
 
 例如：`-XX:NewRatio`=4，表示新生代：老年代=$1:4$，即年轻代占整个堆的1/5。在设置了`Xms=Xmx`和`Xmn`（年轻代的大小）的情况下，该参数不需要进行设置。
 
-### 5.3 调整Eden区和Survivor区的比例
+### 5.3 Eden区和Survivor区的比例
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/jvm-intro.html#_4-3-%E8%B0%83%E6%95%B4survivor%E5%8C%BA%E5%92%8Ceden%E5%8C%BA%E7%9A%84%E6%AF%94%E5%80%BC)
 
 `-XX:SurvivorRatio`：Eden区和两个Survivor区的比值。
 
 例如：`-XX:SurvivorRatio`=8，表示Eden：两个Survivor=$8:2$，即一个Survivor占年轻代的1/10。
 
-### 5.4 JVM的栈参数调优
+### 5.4 设置新生代的大小
 
-`-Xss`：设置线程堆栈的大小（以字节为单位），数字后可带`K`、`M`或`G`（分别表示`KB`、`MB`和`GB`）。
+> 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/jvm-parameters-intro.html#_2-2-%E6%98%BE%E5%BC%8F%E6%96%B0%E7%94%9F%E4%BB%A3%E5%86%85%E5%AD%98-young-generation)
 
-`-XXThreadStackSize`：设置线程堆栈的大小（以字节为单位），数字后可带`K`、`M`或`G`（分别表示千字节、兆字节和千兆字节）。
+- 通过`-XX:NewSize`和`-XX:MaxNewSize`指定。
+- 通过`-Xmn<young size>[unit]`指定。
+
+### 5.5 设置元空间/永久代的大小
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/jvm-parameters-intro.html#_2-3-%E6%98%BE%E5%BC%8F%E6%8C%87%E5%AE%9A%E6%B0%B8%E4%B9%85%E4%BB%A3-%E5%85%83%E7%A9%BA%E9%97%B4%E7%9A%84%E5%A4%A7%E5%B0%8F)
+
+- 元空间：`-XX:MetaspaceSize`和`-XX:MaxMetaspaceSize`。
+- 永久代：`-XX:PermSize`和`-XX:MaxPermSize`。
+
+### 5.6 栈参数
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/jvm-intro.html#_4-7-jvm%E7%9A%84%E6%A0%88%E5%8F%82%E6%95%B0%E8%B0%83%E4%BC%98)
+
+`-Xss`：调整每个线程栈空间的大小。JDK 1.5以后每个线程堆栈大小为1M，以前每个线程堆栈大小为256K。在相同物理内存下，减小这个值能生成更多的线程。但是操作系统对一个进程内的线程数还是有限制的，不能无限生成，经验值在3000~5000左右。
+
+### 5.7 GC相关
+
+> 参考链接：[JavaGuide](https://javaguide.cn/java/jvm/jvm-parameters-intro.html#_3-%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%9B%B8%E5%85%B3)
+
+#### 垃圾回收器
+
+- 串行垃圾收集器：`-XX:+UseSerialGC`。
+- 并行垃圾收集器：`-XX:+UseParallelGC`。
+- CMS垃圾收集器：`-XX:+UseConcMarkSweepGC`。
+- G1垃圾收集器：`-XX:+UseG1GC`。
+
+#### GC记录
+
+- `-XX:+UseGCLogFileRotation`。
+- `-XX:NumberOfGCLogFiles=< number of log files >`。
+- `-XX:GCLogFileSize=< file size >[ unit ]`。
+- `-Xloggc:/path/to/gc.log`。
 
 ## 六、常见问题:airplane:
 
