@@ -394,7 +394,7 @@ public class Animal {
 - **`AfterThrowing`**（异常通知）：目标对象的方法运行中抛出/触发异常后触发。`AfterReturning`和`AfterThrowing`两者互斥。
 - **`Around`**（环绕通知）：编程式控制目标对象的方法调用。**环绕通知是所有通知类型中可操作范围最大的一种，因为它可以直接拿到目标对象，以及要执行的方法，所以环绕通知可以任意地在目标对象的方法调用前后操作，甚至不调用目标对象的方法**。
 
-## 三、Spring事务:rocket:
+## 三、Spring事务
 
 ### 3.1 Spring支持两种方式的事务管理
 
@@ -421,7 +421,7 @@ public void aMethod {
 }
 ```
 
-### 3.2 Spring事务管理接口介绍
+### 3.2 Spring事务管理接口介绍:rocket:
 
 > 参考链接：[JavaGuide](https://javaguide.cn/system-design/framework/spring/spring-transaction.html#spring-%E4%BA%8B%E5%8A%A1%E7%AE%A1%E7%90%86%E6%8E%A5%E5%8F%A3%E4%BB%8B%E7%BB%8D)
 
@@ -519,7 +519,7 @@ public interface TransactionStatus{
 }
 ```
 
-### 3.3 事务属性详解
+### 3.3 事务属性详解:rocket:
 
 > 参考链接：[JavaGuide](https://javaguide.cn/system-design/framework/spring/spring-transaction.html#%E4%BA%8B%E5%8A%A1%E5%B1%9E%E6%80%A7%E8%AF%A6%E8%A7%A3)
 
@@ -801,7 +801,7 @@ Spring MVC是Spring在Spring Container Core和AOP等技术基础上，遵循Web 
 - 处理器适配器（HandlerAdapter）：会把处理器包装成适配器，这样就可以支持多种类型的处理器（适配器模式的应用）。
 - 视图解析器（ViewResovler）：进行视图解析，多返回的字符串，进行处理，可以解析成对应的页面。
 
-## 五、常见问题
+## 五、常见问题:airplane:
 
 ### 5.1 `BeanFactory`和`ApplicationContext`有什么区别？
 
@@ -830,7 +830,7 @@ Spring MVC是Spring在Spring Container Core和AOP等技术基础上，遵循Web 
 
 `@Transactional`注解仅仅是一些（和事务相关的）元数据，在运行时被事务基础设施读取消费，并使用这些元数据来配置Bean的事务行为。大致来说具有两方面功能：一是表明该方法要参与事务，二是配置相关属性来定制事务的参与方式和运行行为。**声明式事务主要得益于Spring AOP**，即使用一个事务拦截器，在方法调用的前后/周围进行事务性增强（Advice），来驱动事务完成。
 
-## 补充：MyBatis
+## 补充：MyBatis:airplane:
 
 ### `#{}`和`${}`的区别
 
@@ -868,7 +868,7 @@ MyBatis在处理`#{}`时会将其替换为`?`，调用`PreparedStatement`的`Set
 
 二级缓存相对于一级缓存来说，实现了`SqlSession`之间缓存数据的共享，同时粒度更加细，能够到`namespace`级别，通过`Cache`接口实现类不同的组合，对`Cache`的可控性也更强。MyBatis在多表查询时，极大可能会出现脏数据，有设计上的缺陷，安全使用二级缓存的条件比较苛刻。在分布式环境下，由于默认的MyBatis Cache实现都是基于本地的，分布式环境下必然会读取到脏数据，需要使用集中式缓存将MyBatis 的`Cache`接口实现，有一定的开发成本，直接使用Redis、Memcached等分布式缓存可能成本更低，安全性也更高。
 
-## 补充：Spring Boot
+## 补充：Spring Boot:airplane:
 
 ### 如何理解`Starter`？
 
