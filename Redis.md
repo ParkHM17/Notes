@@ -1,56 +1,31 @@
 # Redis
 
-## 一、Redis概念和基础:boat:
+## 一、基础概念
 
-### 1.1 什么是Redis？
+### 1.1 简介
 
-> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-introduce.html#%E4%BB%80%E4%B9%88%E6%98%AFredis)
+> 参考链接：[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B-redis)
 
-Redis是一款**内存高速缓存数据库**，全称为：**Remote Dictionary Server**（远程数据服务），使用**C语言编写**，是一个**Key-Value**存储系统（键值对存储系统），支持丰富的数据类型，如：`String`、`List`、`Set`、`Zset`、`Hash`。
+**Redis就是一个使用C语言开发的数据库**，不过与传统数据库不同的是**Redis的数据是存在内存中的** ，即内存数据库，所以读写速度非常快，因此Redis被广泛应用于缓存方向。另外，Redis除了做缓存之外，也经常用来做分布式锁，甚至是消息队列。
 
-### 1.2 为什么要用Redis？
-
-> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-introduce.html#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E4%BD%BF%E7%94%A8redis)
-
-- 读写性能优异。
-- 数据类型丰富。
-- 操作原子性。
-- 持久化。
-- 发布/订阅。
-- 分布式。
-
-### 1.3 Redis的使用场景
-
-> 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-introduce.html#redis%E7%9A%84%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF)
-
-- 热点数据缓存。
-- 分布式锁。
-- 消息队列：`list`数据结构可以作为一个简单的队列使用，Redis 5.0新增的`Stream`更加适合做消息队列。
-
-### 1.4 与Memcached的比较
+### 1.2 与Memcached的比较
 
 > 参考链接：[JavaGuide](https://javaguide.cn/database/redis/redis-questions-01.html#%E8%AF%B4%E4%B8%80%E4%B8%8B-redis-%E5%92%8C-memcached-%E7%9A%84%E5%8C%BA%E5%88%AB%E5%92%8C%E5%85%B1%E5%90%8C%E7%82%B9)
 >
 
-#### 共同点
+- **共同点**：都是**基于内存**的数据库，一般都用来当做缓存使用；都有**过期策略**；两者的**性能都非常高**。
+- **区别**：
+  - **Redis支持更丰富的数据类型（支持更复杂的应用场景）**，不仅仅支持简单的Key-Value类型数据，同时还提供`List`、`Set`、`Zset`、`Hash`等数据类型的存储；Memcached只支持最简单的Key-Value数据类型。
+  - **Redis支持数据的持久化**，它可以将内存中的数据保持在磁盘中，重启的时候可以再次加载进行使用；Memcached把数据全部存在内存之中。
+  - Redis在服务器内存使用完之后，可以将不用的数据放到磁盘上；但是**Memcached在服务器内存使用完之后，就会直接报异常**。
+  - **Redis支持原生集群模式**；Memcached**没有原生的集群模式**，需要依靠客户端来实现往集群中分片写入数据。
+  - Redis使用**单线程的多路I/O复用**模型（Redis 6.0引入了多线程I/O）；Memcached是**多线程、非阻塞I/O复用**的网络模型。
+  - Redis支持**发布/订阅模型、Lua脚本**等功能。
+  - Redis**同时使用了惰性删除与定期删除**的过期删除策略；Memcached过期数据的**删除策略只用了惰性删除**。
 
-- 都是**基于内存**的数据库，一般都用来当做缓存使用。
-- 都有**过期策略**。
-- 两者的**性能都非常高**。
+## 二、数据结构
 
-#### 区别
-
-- **Redis支持更丰富的数据类型（支持更复杂的应用场景）**，不仅仅支持简单的Key-Value类型数据，同时还提供`List`、`Set`、`Zset`、`Hash`等数据类型的存储；Memcached只支持最简单的Key-Value数据类型。
-- **Redis支持数据的持久化**，它可以将内存中的数据保持在磁盘中，重启的时候可以再次加载进行使用；Memcached把数据全部存在内存之中。
-- Redis在服务器内存使用完之后，可以将不用的数据放到磁盘上；但是**Memcached在服务器内存使用完之后，就会直接报异常**。
-- **Redis支持原生Cluster模式**；Memcached**没有原生的集群模式**，需要依靠客户端来实现往集群中分片写入数据。
-- Redis使用**单线程的多路I/O复用**模型（Redis 6.0引入了多线程I/O）；Memcached是**多线程、非阻塞I/O复用**的网络模型。
-- Redis支持**发布/订阅模型、Lua脚本**等功能。
-- Redis**同时使用了惰性删除与定期删除**的过期删除策略；Memcached过期数据的**删除策略只用了惰性删除**。
-
-## 二、数据结构:rocket:
-
-### 2.1 5种基础数据类型
+### 2.1 5种基础数据类型:airplane:
 
 > 参考链接：[Java全栈知识体系](https://pdai.tech/md/db/nosql-redis/db-redis-data-types.html)、[JavaGuide](https://javaguide.cn/database/redis/redis-data-structures-01.html)
 
@@ -66,65 +41,47 @@ Redis中所有的**Key（键）都是字符串**，所以数据类型是指**存
 |   Hash<br>散列   |           包含**键值对的无序散列表**           |              包含方法有添加、获取、删除单个元素              |
 | Zset<br>有序集合 |         和散列一样，**用于存储键值对**         | 字符串成员与浮点数分数之间的有序映射；**元素的排列顺序由分数的大小决定**；包含方法有添加、获取、删除单个元素以及根据分值范围或成员来获取元素 |
 
-#### `String`字符串
+#### `String`（字符串）
+
+##### 介绍
 
 `String`是Redis中最基本的数据类型。`String`类型是**二进制安全**（由于统计变量`len`，读写字符串时不依赖`“\0”`终止符）的，意思是Redis的`String`可以包含任何数据，如数字、字符串、图片或者序列化的对象。
 
-##### 图例
+![String 图例](Redis.assets/image-20220719124403897.png)
 
-![String 图例](Redis.assets/datatype-string.png)
+##### 常用命令
 
-##### 命令
+|               命令               |              介绍               |
+| :------------------------------: | :-----------------------------: |
+|         `SET key value`          |        设置指定`key`的值        |
+|        `SETNX key value`         |    只有在`key`不存在时设置值    |
+|            `GET key`             |        获取指定`key`的值        |
+| `MSET key1 value1 key2 value2 …` |   设置一个或多个指定`key`的值   |
+|       `MGET key1 key2 ...`       |   获取一个或多个指定`key`的值   |
+|           `STRLEN key`           | 返回`key`所储存的字符串值的长度 |
+|            `INCR key`            |    将`key`中存储的数字值加1     |
+|            `DECR key`            |    将`key`中存储的数字值减1     |
+|           `EXISTS key`           |      判断指定`key`是否存在      |
 
-|   命令   |            简述             |        使用         |
-| :------: | :-------------------------: | :-----------------: |
-|  `GET`   |   获取存储在给定键中的值    |      `GET key`      |
-|  `SET`   |   设置存储在给定键中的值    |   `SET key value`   |
-| `SETNX`  | 只有在`key`不存在时设置其值 |  `SETNX key value`  |
-|  `DEL`   |   删除存储在给定键中的值    |      `DEL key`      |
-|  `INCR`  |       将键存储的值加1       |     `INCR key`      |
-|  `DECR`  |       将键存储的值减1       |     `DECR key`      |
-| `INCRBY` |    将键存储的值加上整数     | `INCRBY key amount` |
-| `DECRBY` |    将键存储的值减去整数     | `DECRBY key amount` |
+##### 应用场景
 
-**执行示例**：
+- **需要存储常规数据的场景**：
+  - 举例：缓存Session、Token、图片地址、序列化后的对象。
+  - 相关命令：`SET`、`GET`。
+- **需要计数的场景**：
+  - 举例：用户单位时间的请求数（简单限流可以用到）、页面单位时间的访问数。
+  - 相关命令：`SET`、`GET`、`INCR`、`DECR` 。
+- **分布式锁**：利用`SETNX key value`可以实现一个最简易的分布式锁。
 
-```bash
-127.0.0.1:6379> set hello world
-OK
-127.0.0.1:6379> get hello
-"world"
-127.0.0.1:6379> del hello
-(integer) 1
-127.0.0.1:6379> get hello
-(nil)
-127.0.0.1:6379> set counter 2
-OK
-127.0.0.1:6379> get counter
-"2"
-127.0.0.1:6379> incr counter
-(integer) 3
-127.0.0.1:6379> get counter
-"3"
-127.0.0.1:6379> incrby counter 100
-(integer) 103
-127.0.0.1:6379> get counter
-"103"
-127.0.0.1:6379> decr counter
-(integer) 102
-127.0.0.1:6379> get counter
-"102"
-```
+#### `List`（列表）
 
-#### `List`列表
+##### 介绍
 
-Redis中的`List`其实就是**链表（Redis使用双端链表实现`List`）**。使用`List`结构可以轻松实现**最新消息排队功能**（比如新浪微博的TimeLine）。`List`的另一个应用就是**消息队列**，可以利用`List`的`PUSH`操作，将任务存放在`List`中，然后工作线程再用`POP`操作将任务取出执行。
+Redis中的`List`其实就是**链表（双向链表）**。使用`List`结构可以轻松实现**最新消息排队功能**（比如新浪微博的TimeLine）。`List`的另一个应用就是**消息队列**，可以利用`List`的`PUSH`操作，将任务存放在`List`中，然后工作线程再用`POP`操作将任务取出执行。
 
-##### 图例
+![List 图例](Redis.assets/image-20220719124413287.png)
 
-![List 图例](Redis.assets/datatype-list.png)
-
-##### 命令
+##### 常用命令
 
 |   命令   |                     简述                     |           使用            |
 | :------: | :------------------------------------------: | :-----------------------: |
