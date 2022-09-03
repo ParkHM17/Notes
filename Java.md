@@ -1838,3 +1838,27 @@ b += a;
 - 使用`Object`类的`clone()`方法，需要实现`Cloneable`接口，**这种方式创建对象并不会调用任何构造函数**。
 - 使用反序列化，通过`ObjectInputStream`的`readObject()`方法反序列化类。**在反序列化时，创建对象并不会调用任何构造函数**。
 
+### 11.6 HashMap为何线程不安全？
+
+> 参考链接：[思否](https://segmentfault.com/a/1190000038989240)
+
+- **JDK 1.7中存在环形链表、数据丢失，因为使用了`transfer()`方法，且在处理哈希冲突时使用的是“头插法”**。
+
+  ```java
+  for (Entry<K,V> e : table) {
+      while(null != e) {
+          Entry<K,V> next = e.next;
+          if (rehash) {
+              e.hash = null == e.key ? 0 : hash(e.key);
+          }
+          int i = indexFor(e.hash, newCapacity);
+          e.next = newTable[i];
+          newTable[i] = e;
+          e = next;
+      }
+  }
+  ```
+
+- **JDK 1.8中采用“尾插法”解决哈希冲突，且摒弃了`transfer()`方法，直接在`resize()`方法中完成了数据迁移**，所以环形链表、数据丢失等问题已经得到了很好的解决，但还存在**数据覆盖**的问题，具体原因：使用了`putVal()`方法，其中判断是否有哈希冲突的代码为`if ((p = tab[i = (n - 1) & hash]) == null)`，假设两个线程A、B都在进行`put`操作，当线程A执行完这行代码后被挂起，而线程B开始运行并完成了正常的插入，**随后线程A再次启动，但由于之前已经进行了判断，所以此时直接进行插入，这就导致了线程B插入的数据被线程A覆盖**。
+
+- 如何保证线程安全：使用`Collections.synchronizedMap()`方法，原理就是在`HashMap`的所有方法上加上`synchronized`关键字。
