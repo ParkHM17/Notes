@@ -1,0 +1,29 @@
+Your new PDF is ready for the following title:
+
+Source Filename: 0800.pdf
+
+Title: LAGIM: A Label-Aware Graph Interaction Model for Joint Multiple Intent Detection and Slot Filling
+
+Paper ID: 2023050748
+
+PDF Filename: 2023050748.pdf
+
+A copy of your IEEE Xplore compatible PDF is attached to this email. You can also download it from your PDF eXpress account. The file is labeled within its document properties as being 'Certified by IEEE PDF eXpress', with an exact date and time stamp. The certified file attached to this message is the file that you should submit to your conference's final paper collection site.
+
+We recommend you check the PDF carefully. Examine each page on screen and in print to ensure everything looks as you intend.
+
+If you are not satisfied with your PDF, you may go back to your account and submit another source file for conversion, or submit a PDF that you produce for checking.
+
+If there is any other issue with your PDF, you may go back to your account and Request a Manual Conversion: your submission will be sent to Technical Support for special handling.
+
+For Paper ID: 2023050748
+
+PDF Checks: 1 of 10
+
+Source File Conversion: 0 of 20
+
+A Reminder: PDF eXpress is NOT the final collection site.
+
+Thank you for using IEEE PDF eXpress!
+
+For guidance in creating IEEE Xplore-compliant PDFs, visit our online FAQ
